@@ -1,6 +1,10 @@
 from typing import List, Union
 from pydantic import AnyHttpUrl, validator
 from pydantic_settings import BaseSettings
+import os
+
+_base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_db_path = os.path.join(_base_dir, "liberty_wear.db")
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Liberty Wear API"
@@ -22,7 +26,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "liberty_wear"
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:////Users/apple/Desktop/liberty-wear/backend/liberty_wear.db"
+    SQLALCHEMY_DATABASE_URI: str = f"sqlite:///{_db_path}"
 
     # Security
     SECRET_KEY: str = "SUPER_SECRET_KEY_FOR_JWT_TOKEN_GEN_CHANGE_IN_PROD"
