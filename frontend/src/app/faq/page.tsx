@@ -48,7 +48,7 @@ export default function FAQPage() {
   useEffect(() => {
     const fetchFaq = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/pages/faq");
+        const res = await fetch(`/api/v1/pages/faq?t=${Date.now()}`);
         if (res.ok) {
           const json = await res.json();
           const items = json.data;
@@ -79,8 +79,39 @@ export default function FAQPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-blue" />
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="pt-32 pb-16 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+          <div className="container mx-auto px-6 max-w-4xl relative z-10 animate-pulse">
+            {/* Header Skeleton */}
+            <div className="text-center mb-16 space-y-4">
+              <div className="h-3 w-16 bg-slate-100 rounded mx-auto" />
+              <div className="h-12 md:h-16 w-1/2 bg-slate-100 rounded mx-auto" />
+            </div>
+
+            {/* FAQ Skeletons */}
+            <div className="space-y-12">
+              {[1, 2, 3].map((section) => (
+                <div key={section} className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-4 w-32 bg-slate-100 rounded" />
+                    <div className="flex-1 h-[1px] bg-slate-100" />
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2].map((item) => (
+                      <div key={item} className="py-6 border-b border-slate-100 flex justify-between items-center">
+                        <div className="h-4 w-2/3 bg-slate-100 rounded" />
+                        <div className="w-8 h-8 rounded-full bg-slate-100" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }

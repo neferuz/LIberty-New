@@ -35,7 +35,7 @@ export const Hero = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/v1/pages/home");
+        const response = await fetch(`/api/v1/pages/home?t=${Date.now()}`);
         if (response.ok) {
           const result = await response.json();
           if (result.data && result.data.hero && result.data.hero.slides) {
@@ -64,8 +64,31 @@ export const Hero = () => {
 
   if (loading || slides.length === 0) {
     return (
-      <section className="relative h-auto min-h-[80dvh] md:h-[95vh] flex flex-col md:flex-row items-stretch pt-16 md:pt-20 overflow-hidden bg-white animate-pulse">
-         <div className="container mx-auto px-6 max-w-7xl h-full bg-slate-50/50 rounded-2xl" />
+      <section className="relative h-auto min-h-[80dvh] md:h-[95vh] flex flex-col lg:grid lg:grid-cols-12 lg:gap-8 lg:items-center pt-16 md:pt-20 overflow-hidden bg-white">
+        <div className="absolute inset-0 bg-grid-pattern opacity-100 pointer-events-none" />
+        <div className="container mx-auto px-6 max-w-7xl flex flex-col lg:grid lg:grid-cols-12 lg:gap-8 lg:items-center h-full w-full">
+          {/* Skeleton Image on the right (matches layout) */}
+          <div className="relative w-full h-[50vh] sm:h-[55vh] lg:col-span-5 lg:col-start-8 lg:h-[75vh] bg-slate-50 animate-pulse mb-4 lg:mb-0 lg:order-2 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-brand-blue/30 animate-spin" />
+          </div>
+          
+          {/* Skeleton Text on the left (matches layout) */}
+          <div className="flex flex-col justify-center lg:col-span-6 lg:order-1 animate-pulse space-y-6 md:space-y-8">
+            <div className="h-4 w-32 bg-slate-100 rounded" />
+            <div className="space-y-3">
+              <div className="h-10 md:h-14 w-5/6 bg-slate-100 rounded" />
+              <div className="h-10 md:h-14 w-2/3 bg-slate-100 rounded" />
+            </div>
+            <div className="space-y-2 max-w-md">
+              <div className="h-4 w-full bg-slate-100 rounded" />
+              <div className="h-4 w-4/5 bg-slate-100 rounded" />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="h-12 w-full sm:w-36 bg-slate-100 rounded" />
+              <div className="h-12 w-full sm:w-36 bg-slate-100 rounded" />
+            </div>
+          </div>
+        </div>
       </section>
     );
   }
@@ -79,7 +102,7 @@ export const Hero = () => {
       <div className="hidden sm:block absolute top-0 right-0 w-24 h-24 border-r border-t border-slate-100" />
       <div className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 border-l border-b border-slate-100" />
       <div className="hidden sm:block absolute bottom-0 right-0 w-24 h-24 border-r border-b border-slate-100" />
-      <div className="absolute inset-0 bg-grid-pattern opacity-10 md:opacity-15 pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-100 pointer-events-none" />
       
       <div className="container mx-auto px-6 max-w-7xl flex flex-col lg:grid lg:grid-cols-12 lg:gap-8 lg:items-center h-full">
         {/* Image Display */}
@@ -115,7 +138,7 @@ export const Hero = () => {
         </div>
 
         {/* Content Section */}
-        <div className="relative flex-1 flex flex-col justify-start lg:justify-center py-0 md:py-12 lg:col-span-6 lg:pr-8 lg:order-1">
+        <div className="relative flex-1 flex flex-col justify-start lg:justify-center py-0 md:py-6 lg:col-span-6 lg:pr-8 lg:order-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current}
@@ -125,15 +148,15 @@ export const Hero = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 {content.titleThird && (
-                  <span className="inline-block px-3 py-1 rounded-none bg-slate-50 border border-slate-100 text-[9px] font-bold tracking-[0.2em] uppercase mb-4 md:mb-6 text-brand-blue">
+                  <span className="inline-block px-3 py-1 rounded-none bg-slate-50 border border-slate-100 text-[9px] font-bold tracking-[0.2em] uppercase mb-3 md:mb-4 text-brand-blue">
                     {content.titleThird}
                   </span>
                 )}
-                <h1 className="text-3xl sm:text-4xl md:text-7xl lg:text-[5rem] font-bold tracking-tighter text-brand-blue leading-[0.9] mb-4 md:mb-10 whitespace-pre-line">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tighter text-brand-blue leading-[0.95] mb-3 md:mb-6 whitespace-pre-line">
                   {content.titleFirst} <br />
                   {content.titleSecond}
                 </h1>
-                <p className="hidden sm:block text-sm md:text-lg text-slate-500 leading-relaxed max-w-md mb-6 md:mb-12">
+                <p className="hidden sm:block text-sm md:text-base text-slate-500 leading-relaxed max-w-md mb-4 md:mb-6">
                   {content.subtitle}
                 </p>
                 <div className="flex flex-row gap-2 md:gap-4 mt-2 md:mt-0">
@@ -150,7 +173,7 @@ export const Hero = () => {
 
             {/* Slider Controls */}
             {slides.length > 1 && (
-              <div className="mt-8 lg:mt-20 flex items-center gap-6 md:gap-8">
+              <div className="mt-6 lg:mt-10 flex items-center gap-6 md:gap-8">
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={prev}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { evolventa } from "@/lib/fonts";
+import Script from "next/script";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -17,6 +18,7 @@ import { CartProvider } from "@/context/CartContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { CartDrawer } from "@/components/common/CartDrawer";
 import { SearchOverlay } from "@/components/common/SearchOverlay";
+import { ScrollToTop } from "@/components/common/ScrollToTop";
 
 export default function RootLayout({
   children,
@@ -24,10 +26,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${evolventa.variable} scroll-smooth`}>
-      <body className="font-sans antialiased bg-white text-blue-950 selection:bg-blue-950 selection:text-white">
+    <html lang="ru" className={`${evolventa.variable}`}>
+      <body className="font-sans antialiased bg-white text-brand-blue selection:bg-brand-blue selection:text-white">
+        {/* Hidden Google Translate element */}
+        <div id="google_translate_element" style={{ display: "none" }} />
+        
+        <Script id="google-translate-init" strategy="afterInteractive">
+          {`
+            window.googleTranslateElementInit = function() {
+              new google.translate.TranslateElement({
+                pageLanguage: 'ru',
+                includedLanguages: 'ru,uz',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+              }, 'google_translate_element');
+            }
+          `}
+        </Script>
+        <Script
+          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
+
         <SearchProvider>
           <CartProvider>
+            <ScrollToTop />
             {children}
             <SearchOverlay />
             <CartDrawer />

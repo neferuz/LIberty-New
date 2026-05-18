@@ -12,6 +12,7 @@ class ProductBase(BaseModel):
     category: Optional[str] = None
     category_id: Optional[int] = None
     image_url: Optional[str] = None
+    images: Optional[str] = None
     is_active: Optional[bool] = True
 
 class ProductCreate(ProductBase):
@@ -31,4 +32,7 @@ class ProductInDBBase(ProductBase):
         from_attributes = True
 
 class Product(ProductInDBBase):
-    pass
+    sizes: Optional[str] = None
+    composition: Optional[str] = None
+    variants: Optional[list] = None
+    characteristics: Optional[dict] = None

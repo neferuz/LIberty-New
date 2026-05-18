@@ -9,7 +9,7 @@ export const Newsletter = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/pages/home");
+        const res = await fetch(`/api/v1/pages/home?t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
           setContent(data.data.newsletter);
@@ -27,7 +27,7 @@ export const Newsletter = () => {
   };
 
   return (
-    <section className="pt-4 pb-16 md:py-24 bg-brand-blue text-white overflow-hidden relative">
+    <section className="pt-2 pb-8 md:py-12 bg-brand-blue text-white overflow-hidden relative">
       <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">

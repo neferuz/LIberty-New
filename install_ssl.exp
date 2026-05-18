@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 300
+set pass "nE315uSK*?t#DQ"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "apt-get update && apt-get install -y certbot python3-certbot-nginx && certbot --nginx -d libertywear.uz -d www.libertywear.uz -d admin.libertywear.uz --non-interactive --agree-tos -m admin@libertywear.uz --redirect"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

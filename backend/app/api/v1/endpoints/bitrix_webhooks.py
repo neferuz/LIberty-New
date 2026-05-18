@@ -13,69 +13,96 @@ async def sync_single_product(product_id: int, db: Session):
     try:
         logger.info(f"Webhook: Syncing product ID {product_id}")
         # Fetch full details for this product
-        bp = await bitrix_service._call('crm.product.get', {'id': product_id})
+        p = await bitrix_service._call('crm.product.get', {'id': product_id})
         
-        if not bp or 'ID' not in bp:
+        if not p or 'ID' not in p:
             logger.warning(f"Webhook: Product {product_id} not found in Bitrix")
             return
 
-        b_id = int(bp["ID"])
-        b_name = bp["NAME"]
-        b_price = float(bp.get("PRICE") or 0)
+        bitrix_id = int(p["ID"])
+        all_images = []
         
-        # Extract SKU
-        b_sku = bp.get("PROPERTY_113")
-        if isinstance(b_sku, dict): b_sku = b_sku.get("value")
-        if not b_sku: b_sku = bp.get("XML_ID") or f"BX-{b_id}"
+        # 1. Fetch images from offers
+        offers = await bitrix_service._call('catalog.product.offer.list', {
+            'filter': {'parentId': bitrix_id, 'iblockId': 17},
+            'select': ['id', 'iblockId']
+        })
+        offer_list = offers.get('offers', [])
+        for offer in offer_list:
+            o_img_res = await bitrix_service._call('catalog.productImage.list', {'productId': offer['id']})
+            o_imgs = o_img_res.get('productImages', [])
+            for o_img in o_imgs:
+                url = o_img.get('detailUrl')
+                if url and url not in all_images:
+                    all_images.append(url)
         
-        # Extract Image
-        b_image = None
-        prop_45 = bp.get("PROPERTY_45")
-        if prop_45:
-            if isinstance(prop_45, dict):
-                b_image = prop_45.get("value") or prop_45.get("showUrl")
-            elif isinstance(prop_45, list) and len(prop_45) > 0:
-                first = prop_45[0]
-                b_image = first.get("value") or first.get("showUrl") if isinstance(first, dict) else first
-            else:
-                b_image = prop_45
+        # 2. Try the product itself catalog image list
+        img_res = await bitrix_service._call('catalog.productImage.list', {'productId': bitrix_id})
+        imgs = img_res.get('productImages', [])
+        for img in imgs:
+            url = img.get('detailUrl')
+            if url and url not in all_images:
+                all_images.append(url)
         
-        if not b_image and bp.get("PREVIEW_PICTURE"):
-            pic = bp["PREVIEW_PICTURE"]
-            b_image = pic.get("showUrl") if isinstance(pic, dict) else pic
+        # 3. Fallback to standard fields
+        std_img_fields = ['PROPERTY_45', 'PREVIEW_PICTURE', 'DETAIL_PICTURE']
+        for field in std_img_fields:
+            val = p.get(field)
+            if val:
+                urls = []
+                if isinstance(val, dict):
+                    urls = [val.get('downloadUrl') or val.get('showUrl')]
+                elif isinstance(val, list):
+                    urls = [item.get('downloadUrl') or item.get('showUrl') if isinstance(item, dict) else item for item in val]
+                else:
+                    urls = [str(val)]
+                
+                for url in urls:
+                    if url:
+                        if url.startswith("/"):
+                            url = f"https://yustex.bitrix24.uz{url}"
+                        if url not in all_images:
+                            all_images.append(url)
 
-        if not b_image and bp.get("DETAIL_PICTURE"):
-            pic = bp["DETAIL_PICTURE"]
-            b_image = pic.get("showUrl") if isinstance(pic, dict) else pic
-            
-        if b_image and b_image.startswith("/"):
-            b_image = f"https://yustex.bitrix24.uz{b_image}"
+        image_url = all_images[0] if all_images else None
+        images_str = ",".join(all_images) if all_images else None
 
-        # Update local DB
-        product = db.query(Product).filter(Product.bitrix_id == b_id).first()
+        sku = p.get('PROPERTY_113', {}).get('value') if isinstance(p.get('PROPERTY_113'), dict) else p.get('PROPERTY_113')
+        if not sku:
+            sku = f"LW-{bitrix_id}"
+
+        # Fetch categories to map category name
+        sections = await bitrix_service._call('crm.productsection.list', {'filter': {'CATALOG_ID': 15}})
+        category_map = {int(s['ID']): s['NAME'] for s in sections} if isinstance(sections, list) else {}
+        
+        section_id = int(p.get('SECTION_ID', 0))
+        category_name = category_map.get(section_id, "General")
+
+        product = db.query(Product).filter(Product.bitrix_id == bitrix_id).first()
         if not product:
-            product = db.query(Product).filter(Product.sku == b_sku).first()
-            
+            product = db.query(Product).filter(Product.sku == sku).first()
+
+        product_data = {
+            "name": p['NAME'],
+            "sku": sku,
+            "description": p.get('DESCRIPTION', ''),
+            "price": float(p.get('PRICE', 0)),
+            "image_url": image_url,
+            "images": images_str,
+            "is_active": p.get('ACTIVE') == 'Y',
+            "category": category_name,
+            "category_id": section_id,
+            "bitrix_id": bitrix_id
+        }
+
         if product:
-            product.name = b_name
-            product.price = b_price
-            product.description = bp.get("DESCRIPTION")
-            product.image_url = b_image
-            product.bitrix_id = b_id
-            logger.info(f"Webhook: Updated product {b_name}")
+            for key, value in product_data.items():
+                setattr(product, key, value)
+            logger.info(f"Webhook: Updated product {p['NAME']}. Images count: {len(all_images)}")
         else:
-            new_product = Product(
-                bitrix_id=b_id,
-                sku=b_sku,
-                name=b_name,
-                price=b_price,
-                description=bp.get("DESCRIPTION"),
-                image_url=b_image,
-                stock=0,
-                category="General"
-            )
-            db.add(new_product)
-            logger.info(f"Webhook: Created new product {b_name}")
+            product = Product(**product_data)
+            db.add(product)
+            logger.info(f"Webhook: Created new product {p['NAME']}. Images count: {len(all_images)}")
             
         db.commit()
     except Exception as e:

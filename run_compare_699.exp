@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 120
+set pass "nE315uSK*?t#DQ"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "cd /root/liberty-wear/backend && export PYTHONPATH=. && ./venv/bin/python3 compare_699.py"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

@@ -10,10 +10,10 @@ class BitrixService:
         self.base_url = "https://yustex.bitrix24.uz/rest/11/6kuit00wrbcyega9/"
         self.timeout = 30.0
 
-    async def _call(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def _call(self, method: str, params: Dict[str, Any] = None, timeout: float = None) -> Dict[str, Any]:
         """Generic method to call Bitrix24 REST API"""
         url = f"{self.base_url}{method}"
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout or self.timeout) as client:
             try:
                 response = await client.post(url, json=params or {})
                 response.raise_for_status()
@@ -124,5 +124,36 @@ class BitrixService:
             "id": deal_id,
             "fields": {"STAGE_ID": stage_id}
         })
+
+    async def get_contact_deals(self, contact_id: int) -> List[Dict[str, Any]]:
+        """Get all deals for a contact from Bitrix24"""
+        result = await self._call("crm.deal.list", {
+            "filter": {"CONTACT_ID": contact_id},
+            "select": ["ID", "TITLE", "OPPORTUNITY", "STAGE_ID", "DATE_CREATE"]
+        })
+        if isinstance(result, list):
+            return result
+        return []
+
+    async def get_deal_products(self, deal_id: int) -> List[Dict[str, Any]]:
+        """Get product rows for a specific deal"""
+        result = await self._call("crm.deal.productrows.get", {"id": deal_id}, timeout=2.0)
+        if isinstance(result, list):
+            return result
+        return []
+
+    async def get_all_deals(self) -> List[Dict[str, Any]]:
+        """Get all deals from Bitrix24"""
+        result = await self._call("crm.deal.list", {
+            "order": {"ID": "DESC"},
+            "select": ["ID", "TITLE", "OPPORTUNITY", "STAGE_ID", "DATE_CREATE"]
+        }, timeout=3.0)
+        if isinstance(result, list):
+            return result
+        return []
+
+    async def delete_deal(self, deal_id: int) -> Dict[str, Any]:
+        """Delete a deal in Bitrix24 by ID"""
+        return await self._call("crm.deal.delete", {"id": deal_id})
 
 bitrix_service = BitrixService()

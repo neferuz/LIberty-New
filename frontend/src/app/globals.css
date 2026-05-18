@@ -41,8 +41,8 @@
 
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(to right, rgb(44 59 110 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(44 59 110 / 0.06) 1px, transparent 1px);
+      linear-gradient(to right, rgb(44 59 110 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(44 59 110 / 0.035) 1px, transparent 1px);
     background-size: 60px 60px;
   }
 
@@ -51,11 +51,34 @@
     background-size: 20px 20px;
   }
 
-  .scrollbar-hide {
+  .scrollbar-hide,
+  .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-  .scrollbar-hide::-webkit-scrollbar {
+  .scrollbar-hide::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
+}
+
+/* Google Translate premium hidden integration overrides */
+.goog-te-banner-frame,
+.goog-te-banner,
+.goog-te-balloon-frame,
+#goog-gt-tt,
+.goog-te-tooltip,
+.goog-te-menu-value span:last-child,
+iframe[id^=":"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }

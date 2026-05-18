@@ -1,150 +1,146 @@
 import asyncio
-import sys
 import os
-from pathlib import Path
+import sys
+from typing import List, Optional
+import logging
 
-# Add the project root to sys.path so we can import 'app'
-sys.path.append(str(Path(__file__).parent.parent))
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Add project root to sys.path
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
 
 from app.db.session import SessionLocal
 from app.models.product import Product
-from app.services.bitrix import bitrix_service
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("bitrix_sync")
-
-from app.db.session import engine, Base, SessionLocal
 from app.models.user import User
 from app.core.security import get_password_hash
-Base.metadata.create_all(bind=engine)
+from app.services.bitrix import bitrix_service
 
-def ensure_admin():
-    db = SessionLocal()
-    admin = db.query(User).filter(User.email == "admin@example.com").first()
-    if not admin:
-        admin_user = User(
-            email="admin@example.com",
-            hashed_password=get_password_hash("admin"),
-            full_name="Administrator",
-            is_active=True,
-            is_superuser=True,
-            role="admin"
-        )
-        db.add(admin_user)
-        db.commit()
-        logger.info("Admin user created: admin@example.com")
-    db.close()
-
-async def sync_catalog():
+async def ensure_admin():
     db = SessionLocal()
     try:
-        # Check if integration is enabled
-        from app.models.page_content import PageContent
-        setting = db.query(PageContent).filter(PageContent.page_name == "bitrix_integration").first()
-        if setting and setting.data and not setting.data.get("enabled", True):
-            logger.info("Bitrix24 integration is disabled. Skipping sync.")
-            return
+        admin = db.query(User).filter(User.email == "admin@liberty.uz").first()
+        if not admin:
+            admin = User(
+                email="admin@liberty.uz",
+                hashed_password=get_password_hash("admin123"),
+                full_name="Admin",
+                role="admin",
+                is_superuser=True
+            )
+            db.add(admin)
+            db.commit()
+            logger.info("Admin user created")
+    finally:
+        db.close()
 
-        ensure_admin()
-        logger.info("Starting Bitrix24 catalog sync...")
-        
-        # 1. Fetch products from Bitrix
-        bitrix_products = await bitrix_service.get_all_products()
-        logger.info(f"Fetched {len(bitrix_products)} products from Bitrix24")
-        
-        for bp in bitrix_products:
-            b_id = int(bp["ID"])
-            b_name = bp["NAME"]
-            b_price = float(bp.get("PRICE") or 0)
-            b_section_id = int(bp.get("SECTION_ID") or 0)
+async def sync_catalog():
+    logger.info("Starting catalog sync from Bitrix...")
+    await ensure_admin()
+    
+    db = SessionLocal()
+    try:
+        # 1. Sync Categories (Get names for mapping)
+        sections = await bitrix_service._call('crm.productsection.list', {'filter': {'CATALOG_ID': 15}})
+        category_map = {int(s['ID']): s['NAME'] for s in sections}
+        logger.info(f"Loaded {len(sections)} categories from Bitrix")
+
+        # 2. Sync Products
+        products = await bitrix_service.get_all_products()
+        synced_count = 0
+        for p in products:
+            bitrix_id = int(p['ID'])
             
-            # Extract SKU
-            b_sku = bp.get("PROPERTY_113")
-            if isinstance(b_sku, dict): b_sku = b_sku.get("value")
-            if not b_sku: b_sku = bp.get("XML_ID") or f"BX-{b_id}"
+            # Fetch images from offers
+            image_url = None
+            all_images = []
             
-            # Extract Image
-            b_image = None
-            # Check PROPERTY_45 (Картинка)
-            prop_45 = bp.get("PROPERTY_45")
-            if prop_45:
-                if isinstance(prop_45, dict):
-                    b_image = prop_45.get("value") or prop_45.get("showUrl")
-                elif isinstance(prop_45, list) and len(prop_45) > 0:
-                    first = prop_45[0]
-                    if isinstance(first, dict):
-                        b_image = first.get("value") or first.get("showUrl")
+            # Try offers
+            offers = await bitrix_service._call('catalog.product.offer.list', {
+                'filter': {'parentId': bitrix_id, 'iblockId': 17},
+                'select': ['id', 'iblockId']
+            })
+            offer_list = offers.get('offers', [])
+            for offer in offer_list:
+                o_img_res = await bitrix_service._call('catalog.productImage.list', {'productId': offer['id']})
+                o_imgs = o_img_res.get('productImages', [])
+                for o_img in o_imgs:
+                    url = o_img.get('detailUrl')
+                    if url and url not in all_images:
+                        all_images.append(url)
+            
+            # If no images in offers, try the product itself
+            img_res = await bitrix_service._call('catalog.productImage.list', {'productId': bitrix_id})
+            imgs = img_res.get('productImages', [])
+            for img in imgs:
+                url = img.get('detailUrl')
+                if url and url not in all_images:
+                    all_images.append(url)
+            
+            # Fallback to standard fields
+            std_img_fields = ['PROPERTY_45', 'PREVIEW_PICTURE', 'DETAIL_PICTURE']
+            for field in std_img_fields:
+                val = p.get(field)
+                if val:
+                    urls = []
+                    if isinstance(val, dict):
+                        urls = [val.get('downloadUrl')]
+                    elif isinstance(val, list):
+                        urls = [item.get('downloadUrl') if isinstance(item, dict) else item for item in val]
                     else:
-                        b_image = first
-                else:
-                    b_image = prop_45
-            
-            # Fallback to PREVIEW_PICTURE
-            if not b_image and bp.get("PREVIEW_PICTURE"):
-                pic = bp["PREVIEW_PICTURE"]
-                b_image = pic.get("showUrl") if isinstance(pic, dict) else pic
-            
-            # Fallback to DETAIL_PICTURE
-            if not b_image and bp.get("DETAIL_PICTURE"):
-                pic = bp["DETAIL_PICTURE"]
-                b_image = pic.get("showUrl") if isinstance(pic, dict) else pic
-            
-            # Ensure URL is absolute if it's relative from Bitrix
-            if b_image and b_image.startswith("/"):
-                b_image = f"https://yustex.bitrix24.uz{b_image}"
+                        urls = [str(val)]
+                    
+                    for url in urls:
+                        if url and url not in all_images:
+                            all_images.append(url)
 
-            b_desc = bp.get("DESCRIPTION")
+            if all_images:
+                image_url = all_images[0]
             
-            # Extract Composition
-            b_composition = bp.get("PROPERTY_115")
-            if isinstance(b_composition, dict): b_composition = b_composition.get("value")
+            images_str = ",".join(all_images) if all_images else None
 
-            # Extract Sizes (Assuming PROPERTY_114 or similar might have them, or mock for now)
-            # Let's try to see if name contains size or mock a few
-            b_sizes = "S, M, L, XL" # Default for now if not found
+            sku = p.get('PROPERTY_113', {}).get('value') if isinstance(p.get('PROPERTY_113'), dict) else p.get('PROPERTY_113')
+            if not sku:
+                sku = f"LW-{bitrix_id}"
+
+            product = db.query(Product).filter(Product.bitrix_id == bitrix_id).first()
             
-            # Check if product already exists by bitrix_id
-            product = db.query(Product).filter(Product.bitrix_id == b_id).first()
-            
-            if not product:
-                # Try by SKU as fallback
-                product = db.query(Product).filter(Product.sku == b_sku).first()
-            
+            section_id = int(p.get('SECTION_ID', 0))
+            category_name = category_map.get(section_id, "General")
+
+            product_data = {
+                "name": p['NAME'],
+                "sku": sku,
+                "description": p.get('DESCRIPTION', ''),
+                "price": float(p.get('PRICE', 0)),
+                "stock": 100,
+                "category": category_name,
+                "category_id": section_id,
+                "image_url": image_url,
+                "images": images_str,
+                "is_active": p.get('ACTIVE') == 'Y',
+                "bitrix_id": bitrix_id
+            }
+
             if product:
-                # Update
-                product.name = b_name
-                product.price = b_price
-                product.description = b_desc
-                product.image_url = b_image
-                product.composition = b_composition
-                product.sizes = b_sizes
-                product.category_id = b_section_id
-                product.bitrix_id = b_id
-                logger.info(f"Updated product: {b_name} (ID: {b_id})")
+                for key, value in product_data.items():
+                    setattr(product, key, value)
             else:
-                # Create
-                new_product = Product(
-                    bitrix_id=b_id,
-                    sku=b_sku,
-                    name=b_name,
-                    price=b_price,
-                    description=b_desc,
-                    image_url=b_image,
-                    composition=b_composition,
-                    sizes=b_sizes,
-                    category_id=b_section_id,
-                    stock=0, # Initial stock
-                    category="General" # Default category
-                )
-                db.add(new_product)
-                logger.info(f"Created new product: {b_name} (ID: {b_id})")
+                product = Product(**product_data)
+                db.add(product)
+            
+            synced_count += 1
+            if synced_count % 10 == 0:
+                logger.info(f"Processed {synced_count} products...")
         
         db.commit()
-        logger.info("Catalog sync completed successfully")
+        logger.info(f"Sync complete! Total products: {synced_count}")
+
     except Exception as e:
+        logger.error(f"Error during sync: {e}")
         db.rollback()
-        logger.error(f"Error during catalog sync: {str(e)}")
     finally:
         db.close()
 

@@ -41,13 +41,16 @@ interface Product {
 interface Category {
   id: string;
   name: string;
+  parent_id?: number | null;
 }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("Все");
+  const [activeRootId, setActiveRootId] = useState<string>("all");
+  const [activeSubId, setActiveSubId] = useState<string>("all");
+  const [activeSubSubId, setActiveSubSubId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -59,9 +62,10 @@ export default function ProductsPage() {
 
   const fetchData = async () => {
     try {
+      const t = Date.now();
       const [prodRes, catRes] = await Promise.all([
-        fetch("http://localhost:8000/api/v1/products/?limit=500"),
-        fetch("http://localhost:8000/api/v1/products/categories")
+        fetch(`http://localhost:8000/api/v1/products/?limit=500&t=${t}`),
+        fetch(`http://localhost:8000/api/v1/products/categories?t=${t}`)
       ]);
       
       if (prodRes.ok) setProducts(await prodRes.json());
@@ -74,17 +78,51 @@ export default function ProductsPage() {
     }
   };
 
+  const getTargetCategoryIds = (): number[] => {
+    if (activeRootId === "all") return [];
+    
+    if (activeSubSubId !== "all") {
+      return [parseInt(activeSubSubId)];
+    }
+    
+    if (activeSubId !== "all") {
+      const subSubs = categories.filter(c => c.parent_id && String(c.parent_id) === String(activeSubId));
+      return [parseInt(activeSubId), ...subSubs.map(c => parseInt(c.id))];
+    }
+    
+    const ids: number[] = [parseInt(activeRootId)];
+    const subs = categories.filter(c => c.parent_id && String(c.parent_id) === String(activeRootId));
+    subs.forEach(sub => {
+      ids.push(parseInt(sub.id));
+      const subSubs = categories.filter(c => c.parent_id && String(c.parent_id) === String(sub.id));
+      subSubs.forEach(subSub => {
+        ids.push(parseInt(subSub.id));
+      });
+    });
+    return ids;
+  };
+
+  const getActiveFilterName = (): string => {
+    if (activeRootId === "all") return "Все";
+    if (activeSubSubId !== "all") {
+      return categories.find(c => String(c.id) === String(activeSubSubId))?.name || "";
+    }
+    if (activeSubId !== "all") {
+      return categories.find(c => String(c.id) === String(activeSubId))?.name || "";
+    }
+    return categories.find(c => String(c.id) === String(activeRootId))?.name || "";
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    if (activeTab === "Все") return matchesSearch;
+    if (activeRootId === "all") return matchesSearch;
     
-    // Find category ID by name
-    const selectedCat = categories.find(c => c.name === activeTab);
-    if (selectedCat) {
-      return matchesSearch && product.category_id === parseInt(selectedCat.id);
+    const targetIds = getTargetCategoryIds();
+    if (targetIds.length > 0) {
+      return matchesSearch && product.category_id !== null && targetIds.includes(product.category_id);
     }
     
     return matchesSearch;
@@ -105,8 +143,54 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-8 h-8 animate-spin text-[#2c3b6e]" />
+      <div className="space-y-8 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-6 w-32 bg-slate-150 rounded" />
+            <div className="h-3.5 w-64 bg-slate-100 rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-8 w-24 bg-slate-100 rounded" />
+            <div className="h-8 w-28 bg-slate-100 rounded" />
+          </div>
+        </div>
+
+        {/* Dynamic Tabs Skeleton */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#e3e8ee] pb-3">
+          <div className="flex gap-6 overflow-x-auto w-full md:w-auto pb-0.5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-4 w-16 bg-slate-100 rounded" />
+            ))}
+          </div>
+          <div className="h-8 w-64 bg-slate-50 border border-[#e3e8ee] rounded" />
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white border border-[#e3e8ee] rounded-xl overflow-hidden shadow-sm">
+          {/* Table Header Placeholder */}
+          <div className="px-6 py-3.5 bg-[#f7f8f9] border-b border-[#e3e8ee] flex items-center justify-between">
+            <div className="h-3.5 w-32 bg-slate-200 rounded" />
+            <div className="h-3.5 w-24 bg-slate-150 rounded" />
+            <div className="h-3.5 w-24 bg-slate-150 rounded" />
+            <div className="h-3 w-8 bg-slate-100 rounded" />
+          </div>
+
+          {/* Table Rows Placeholder (5 rows) */}
+          <div className="divide-y divide-[#e3e8ee]">
+            {[1, 2, 3, 4, 5].map((row) => (
+              <div key={row} className="px-6 py-4 flex items-center justify-between gap-6">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-lg bg-slate-50 border border-[#e3e8ee]" />
+                  <div className="h-4 w-48 bg-slate-150 rounded" />
+                </div>
+                <div className="w-24 h-4 bg-slate-100 rounded" />
+                <div className="w-32 h-4 bg-slate-100 rounded" />
+                <div className="w-6 h-4 bg-slate-50 border border-[#e3e8ee] rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -134,20 +218,22 @@ export default function ProductsPage() {
       {/* Dynamic Tabs */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#e3e8ee]">
         <div className="flex items-center gap-6 overflow-x-auto w-full md:w-auto scrollbar-hide pb-0.5">
-          {["Все", ...categories.map(c => c.name)].map((tab) => (
+          {[{ id: "all", name: "Все" }, ...categories.filter(c => c.parent_id === null || !c.parent_id)].map((tab) => (
             <button
-              key={tab}
+              key={tab.id}
               onClick={() => {
-                setActiveTab(tab);
+                setActiveRootId(tab.id);
+                setActiveSubId("all");
+                setActiveSubSubId("all");
                 setCurrentPage(1);
               }}
               className={cn(
                 "pb-3 text-[14px] font-semibold transition-all relative whitespace-nowrap",
-                activeTab === tab ? "text-[#2c3b6e]" : "text-[#4f566b] hover:text-[#1a1f36]"
+                activeRootId === tab.id ? "text-[#2c3b6e]" : "text-[#4f566b] hover:text-[#1a1f36]"
               )}
             >
-              {tab}
-              {activeTab === tab && (
+              {tab.name}
+              {activeRootId === tab.id && (
                 <motion.div 
                   layoutId="activeTab"
                   className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2c3b6e]"
@@ -172,6 +258,112 @@ export default function ProductsPage() {
            </div>
         </div>
       </div>
+
+      {/* Hierarchical Subcategory Filters */}
+      {(() => {
+        const subCategories = categories.filter(c => c.parent_id && String(c.parent_id) === String(activeRootId));
+        const subSubCategories = categories.filter(c => c.parent_id && String(c.parent_id) === String(activeSubId));
+        
+        return (
+          <div className="space-y-3 -mt-4">
+            <AnimatePresence>
+              {activeRootId !== "all" && subCategories.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap items-center gap-2 py-1.5 overflow-hidden"
+                >
+                  <span className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest mr-2">Подкатегория:</span>
+                  <button
+                    onClick={() => {
+                      setActiveSubId("all");
+                      setActiveSubSubId("all");
+                      setCurrentPage(1);
+                    }}
+                    className={cn(
+                      "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all border",
+                      activeSubId === "all" 
+                        ? "bg-[#2c3b6e] border-[#2c3b6e] text-white shadow-sm" 
+                        : "bg-white border-[#e3e8ee] text-[#4f566b] hover:border-[#2c3b6e]/30 hover:text-[#2c3b6e]"
+                    )}
+                  >
+                    Все
+                  </button>
+                  {subCategories.map((sub) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => {
+                        setActiveSubId(sub.id);
+                        setActiveSubSubId("all");
+                        setCurrentPage(1);
+                      }}
+                      className={cn(
+                        "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all border",
+                        activeSubId === sub.id 
+                          ? "bg-[#2c3b6e] border-[#2c3b6e] text-white shadow-sm" 
+                          : "bg-white border-[#e3e8ee] text-[#4f566b] hover:border-[#2c3b6e]/30 hover:text-[#2c3b6e]"
+                      )}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {activeRootId !== "all" && activeSubId !== "all" && subSubCategories.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap items-center gap-4 py-1.5 overflow-hidden border-t border-[#e3e8ee]/30"
+                >
+                  <span className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest mr-2">Раздел / Сезон:</span>
+                  <button
+                    onClick={() => {
+                      setActiveSubSubId("all");
+                      setCurrentPage(1);
+                    }}
+                    className={cn(
+                      "text-[11px] font-bold transition-all relative pb-0.5",
+                      activeSubSubId === "all" 
+                        ? "text-[#2c3b6e]" 
+                        : "text-[#4f566b] hover:text-[#2c3b6e]"
+                    )}
+                  >
+                    Все
+                    {activeSubSubId === "all" && (
+                      <motion.div layoutId="activeSubSub" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2c3b6e]" />
+                    )}
+                  </button>
+                  {subSubCategories.map((subSub) => (
+                    <button
+                      key={subSub.id}
+                      onClick={() => {
+                        setActiveSubSubId(subSub.id);
+                        setCurrentPage(1);
+                      }}
+                      className={cn(
+                        "text-[11px] font-bold transition-all relative pb-0.5",
+                        activeSubSubId === subSub.id 
+                          ? "text-[#2c3b6e]" 
+                          : "text-[#4f566b] hover:text-[#2c3b6e]"
+                      )}
+                    >
+                      {subSub.name}
+                      {activeSubSubId === subSub.id && (
+                        <motion.div layoutId="activeSubSub" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2c3b6e]" />
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })()}
 
       {/* Table */}
       <div className="bg-white border border-[#e3e8ee] rounded-xl overflow-hidden">
@@ -230,7 +422,7 @@ export default function ProductsPage() {
                 <Search className="w-8 h-8 text-[#e3e8ee]" />
              </div>
              <h3 className="text-[16px] font-bold text-[#1a1f36] mb-1">Товары не найдены</h3>
-             <p className="text-[13px] text-[#4f566b]">В категории «{activeTab}» пока нет товаров.</p>
+             <p className="text-[13px] text-[#4f566b]">В категории «{getActiveFilterName()}» пока нет товаров.</p>
           </div>
         )}
 

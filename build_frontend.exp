@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 900
+set pass "nE315uSK*?t#DQ"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "cd /root/liberty-wear/frontend && export NODE_OPTIONS='--max-old-space-size=1024' && npm install && npm run build && pm2 delete liberty-frontend || true && pm2 start npm --name liberty-frontend -- start -- -p 3004"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

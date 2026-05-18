@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ShoppingBag, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { formatSkuForUrl } from "@/lib/utils";
 
 interface CategoryContentProps {
   slug: string;
@@ -106,13 +107,13 @@ export function CategoryContent({ slug, categoryTitle }: CategoryContentProps) {
                     key={product.id} 
                     className="group relative"
                   >
-                    <Link href={`/product/${product.id}`}>
+                    <Link href={`/product/${(product as any).sku ? `${formatSkuForUrl((product as any).sku)}-` : ''}${product.id}`}>
                       <div className="relative aspect-[3/4] overflow-hidden bg-slate-50">
                         <Image
                           src={product.image}
                           alt={product.name}
                           fill
-                          className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                          className="object-contain transition-transform duration-1000 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/5 transition-colors duration-500" />
                       </div>
@@ -120,7 +121,7 @@ export function CategoryContent({ slug, categoryTitle }: CategoryContentProps) {
                     
                     <div className="mt-4 md:mt-8 flex justify-between items-start gap-2">
                       <div className="min-w-0">
-                        <Link href={`/product/${product.id}`}>
+                        <Link href={`/product/${(product as any).sku ? `${formatSkuForUrl((product as any).sku)}-` : ''}${product.id}`}>
                           <p className="text-[7px] md:text-[9px] text-slate-400 uppercase tracking-widest mb-0.5 truncate">
                             {product.gender === 'women' ? 'Для женщин' : 'Для мужчин'}
                           </p>

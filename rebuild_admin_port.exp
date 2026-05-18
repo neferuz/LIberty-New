@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 1200
+set pass "nE315uSK*?t#DQ"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "find /root/liberty-wear/admin/src -type f -exec sed -i 's/localhost:8000/localhost:8002/g' {} + && cd /root/liberty-wear/admin && export NODE_OPTIONS='--max-old-space-size=1024' && npm run build && pm2 restart liberty-admin"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

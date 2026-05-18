@@ -28,7 +28,7 @@ export default function AboutPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/pages/about")
+    fetch(`/api/v1/pages/about?t=${Date.now()}`)
       .then(res => res.json())
       .then(json => {
         setData(json.data);
@@ -49,8 +49,42 @@ export default function AboutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-200 border-t-brand-blue rounded-full animate-spin" />
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="pt-32 pb-16 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+          <div className="container mx-auto px-6 max-w-7xl relative z-10 animate-pulse">
+            {/* Hero Section Skeleton */}
+            <section className="mb-24 mt-12 text-center space-y-6">
+              <div className="h-16 md:h-24 w-3/4 md:w-2/3 bg-slate-100 rounded mx-auto" />
+              <div className="h-4 w-1/2 md:w-1/3 bg-slate-100 rounded mx-auto" />
+            </section>
+
+            {/* Philosophy Section Skeleton */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24 items-center">
+              <div className="space-y-6">
+                <div className="h-3 w-24 bg-slate-100 rounded" />
+                <div className="h-8 md:h-12 w-3/4 bg-slate-100 rounded" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-slate-100 rounded" />
+                  <div className="h-4 w-5/6 bg-slate-100 rounded" />
+                </div>
+                <div className="pt-6 border-t border-slate-100 flex gap-10">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-6 w-12 bg-slate-100 rounded" />
+                      <div className="h-3 w-16 bg-slate-100 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative aspect-[4/3] bg-slate-50 overflow-hidden rounded-sm flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-brand-blue/30 animate-spin" />
+              </div>
+            </section>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }

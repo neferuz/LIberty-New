@@ -12,6 +12,7 @@ from app.services.bitrix import bitrix_service
 router = APIRouter()
 
 @router.get("/", response_model=List[schemas.user.User])
+@router.get("", response_model=List[schemas.user.User])
 def read_users(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -25,6 +26,7 @@ def read_users(
     return users
 
 @router.post("/", response_model=schemas.user.User)
+@router.post("", response_model=schemas.user.User)
 def create_user(
     *,
     db: Session = Depends(get_db),
@@ -43,7 +45,7 @@ def create_user(
     
     db_obj = models.user.User(
         email=user_in.email,
-        phone=user_in.phone,
+        phone=user_in.phone.strip() if (user_in.phone and user_in.phone.strip()) else None,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         role=user_in.role,
@@ -108,7 +110,7 @@ async def register_user(
     # 3. Create user in our DB
     db_obj = models.user.User(
         email=user_in.email,
-        phone=user_in.phone,
+        phone=user_in.phone.strip() if (user_in.phone and user_in.phone.strip()) else None,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         role="customer", # Default role for public registration
@@ -118,3 +120,57 @@ async def register_user(
     db.commit()
     db.refresh(db_obj)
     return db_obj
+
+@router.get("/me", response_model=schemas.user.User)
+def read_user_me(
+    current_user: models.user.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get current active user.
+    """
+    return current_user
+
+@router.put("/me", response_model=schemas.user.User)
+def update_user_me(
+    *,
+    db: Session = Depends(get_db),
+    user_in: schemas.user.UserUpdate,
+    current_user: models.user.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Update current user profile.
+    """
+    if user_in.password is not None:
+        current_user.hashed_password = get_password_hash(user_in.password)
+    if user_in.full_name is not None:
+        current_user.full_name = user_in.full_name
+    if user_in.phone is not None:
+        current_user.phone = user_in.phone.strip() if user_in.phone.strip() else None
+    if user_in.addresses_json is not None:
+        current_user.addresses_json = user_in.addresses_json
+    if user_in.email is not None:
+        if user_in.email != current_user.email:
+            existing = db.query(models.user.User).filter(models.user.User.email == user_in.email).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Этот email уже занят")
+            current_user.email = user_in.email
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.get("/{user_id}", response_model=schemas.user.User)
+def read_user_by_id(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.user.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get a specific user by ID (Staff only).
+    """
+    user = db.query(models.user.User).filter(models.user.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
+

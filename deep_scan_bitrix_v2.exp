@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+set timeout 300
+set pass "nE315uSK*?t#DQ"
+set py_code "import asyncio; import json; from app.services.bitrix import bitrix_service; async def deep_scan(): result = await bitrix_service._call('crm.product.list', {'order': {'ID': 'DESC'}, 'select': ['*', 'PROPERTY_*'], 'limit': 10}); \[print(f'ID: {p.get(\"ID\")} Name: {p.get(\"Name\")} Fields: {json.dumps(p)}') for p in result\] if isinstance(result, list) else print('Error'); asyncio.run(deep_scan())"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "cd /root/liberty-wear/backend && ./venv/bin/python3 -c '$py_code'"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

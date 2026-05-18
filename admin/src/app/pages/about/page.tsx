@@ -55,7 +55,7 @@ export default function AboutAdminPage() {
 
   const fetchAbout = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/v1/pages/about");
+      const res = await fetch(`http://localhost:8000/api/v1/pages/about?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         const items = data.data || {};
@@ -124,8 +124,44 @@ export default function AboutAdminPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-8 h-8 animate-spin text-[#2c3b6e]" />
+      <div className="space-y-6 animate-pulse">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-6 w-32 bg-slate-150 rounded" />
+            <div className="h-3.5 w-64 bg-slate-100 rounded" />
+          </div>
+          <div className="h-8 w-24 bg-slate-100 rounded" />
+        </div>
+        
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <div className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
+              <div className="h-4 w-1/3 bg-slate-150 rounded" />
+              <div className="h-10 bg-slate-50 border border-[#e3e8ee] rounded" />
+              <div className="h-16 bg-slate-50 border border-[#e3e8ee] rounded" />
+            </div>
+            <div className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
+              <div className="h-4 w-1/3 bg-slate-150 rounded" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-10 bg-slate-50 border border-[#e3e8ee] rounded" />
+                <div className="h-10 bg-slate-50 border border-[#e3e8ee] rounded" />
+              </div>
+              <div className="h-16 bg-slate-50 border border-[#e3e8ee] rounded" />
+            </div>
+          </div>
+          <div className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
+            <div className="h-4 w-1/3 bg-slate-150 rounded" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-10 bg-slate-50 border border-[#e3e8ee] rounded" />
+              <div className="h-10 bg-slate-50 border border-[#e3e8ee] rounded" />
+            </div>
+            <div className="space-y-3 pt-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-slate-50 border border-[#e3e8ee] rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

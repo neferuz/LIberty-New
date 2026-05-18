@@ -9,7 +9,7 @@ export const Partners = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/pages/home");
+        const res = await fetch(`/api/v1/pages/home?t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
           setContent(data.data.press);
@@ -29,13 +29,30 @@ export const Partners = () => {
     brands: ["VOGUE", "HARPER'S BAZAAR", "ELLE", "TATLER", "GQ", "L'OFFICIEL"]
   };
 
-  if (loading && !content) return null;
+  if (loading && !content) {
+    return (
+      <section className="pt-2 pb-8 md:py-10 bg-slate-50 border-y border-slate-100 overflow-hidden relative shadow-none">
+        <div className="absolute inset-0 bg-grid-pattern opacity-100 pointer-events-none" />
+        <div className="container mx-auto px-6 max-w-7xl relative z-10 animate-pulse flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="max-w-md space-y-3">
+            <div className="h-6 w-32 bg-slate-200/60 rounded" />
+            <div className="h-4 w-64 bg-slate-200/60 rounded" />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-12 gap-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-5 w-20 bg-slate-200/60 rounded" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="pt-4 pb-12 md:py-24 bg-slate-50 border-y border-slate-100 overflow-hidden relative shadow-none">
+    <section className="pt-2 pb-8 md:py-10 bg-slate-50 border-y border-slate-100 overflow-hidden relative shadow-none">
       <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
       
-      <div className="container mx-auto px-6 max-w-7xl mb-8 md:mb-16 text-center">
+      <div className="container mx-auto px-6 max-w-7xl mb-4 md:mb-6 text-center">
         <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-brand-blue uppercase mb-3">{data.title}</h2>
         <p className="text-xs md:text-base text-slate-500 max-w-lg mx-auto leading-relaxed">
           {data.description}

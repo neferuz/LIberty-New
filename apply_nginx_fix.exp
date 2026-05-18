@@ -1,0 +1,26 @@
+#!/usr/bin/expect -f
+set timeout 1200
+set pass "nE315uSK*?t#DQ"
+
+# 1. Update Nginx
+spawn scp -o StrictHostKeyChecking=no /Users/apple/Desktop/liberty-wear/libertywear.conf root@147.45.155.163:/etc/nginx/sites-available/libertywear.conf
+expect "*password:*"
+send "$pass\r"
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "nginx -t && systemctl reload nginx"
+expect "*password:*"
+send "$pass\r"
+expect eof
+
+# 2. Fix App server paths
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "grep -r 'http://localhost:8002' /root/liberty-wear/frontend/src/app -l | xargs sed -i 's|http://localhost:8002|http://127.0.0.1:8002|g'"
+expect "*password:*"
+send "$pass\r"
+expect eof
+
+# 3. Rebuild frontend
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "cd /root/liberty-wear/frontend && export NODE_OPTIONS='--max-old-space-size=1024' && npm run build && pm2 restart liberty-frontend"
+expect "*password:*"
+send "$pass\r"
+expect eof

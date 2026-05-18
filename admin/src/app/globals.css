@@ -7,6 +7,15 @@
 
 @theme {
   --font-evolventa: var(--font-evolventa);
+  
+  /* Global shadow elimination for a flat, premium minimalist Editorial style */
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+  --shadow-inner: none;
 }
 
 body {

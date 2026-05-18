@@ -23,10 +23,61 @@ const simpleLinks = [
 
 export const Header = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [profileLink, setProfileLink] = useState("/auth");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setProfileLink("/profile");
+    } else {
+      setProfileLink("/auth");
+    }
+  }, []);
+
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentLang, setCurrentLang] = useState("RU");
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+
+  // On mount, check if there is a googtrans cookie
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+
+    const cookieVal = getCookie("googtrans");
+    if (cookieVal && cookieVal.includes("/uz")) {
+      setCurrentLang("UZ");
+    } else {
+      setCurrentLang("RU");
+    }
+  }, []);
+
+  const toggleLanguage = () => {
+    const newLang = currentLang === "RU" ? "UZ" : "RU";
+    
+    const setCookie = (name: string, value: string) => {
+      const domain = window.location.hostname;
+      document.cookie = `${name}=${value}; path=/;`;
+      document.cookie = `${name}=${value}; path=/; domain=.${domain};`;
+      document.cookie = `${name}=${value}; path=/; domain=${domain};`;
+    };
+
+    if (newLang === "UZ") {
+      setCookie("googtrans", "/ru/uz");
+    } else {
+      setCookie("googtrans", "/ru/ru");
+    }
+
+    setCurrentLang(newLang);
+    window.location.reload();
+  };
   
   const { setIsOpen: setIsOpenCart, items } = useCart();
   const { setIsOpen: setIsOpenSearch } = useSearch();
@@ -34,12 +85,11 @@ export const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/products/categories/tree");
+        const res = await fetch("/api/v1/products/categories/tree");
         if (res.ok) {
           const data: CategoryNode[] = await res.json();
-          // Filter to only show Women, Men, Kids
-          const allowedNames = ["Женский", "Мужской", "Детский"];
-          const filtered = data.filter(c => allowedNames.includes(c.NAME));
+          // Dynamically slice the top-level categories to only include the first 4
+          const filtered = data.slice(0, 4);
           setCategories(filtered);
         }
       } catch (err) {
@@ -90,7 +140,7 @@ export const Header = () => {
         {/* Desktop Layout */}
         <div className="hidden xl:flex items-center justify-between h-10">
           <div className="flex-1 flex justify-start">
-            <Link href="/" className="text-3xl font-bold tracking-tighter text-brand-blue">
+            <Link href="/" className="text-3xl font-bold tracking-tighter text-brand-blue notranslate" translate="no">
               LIBERTY<span className="text-slate-400">WEAR</span>
             </Link>
           </div>
@@ -120,15 +170,62 @@ export const Header = () => {
           </nav>
 
           <div className="flex-1 flex justify-end">
-            <div className="flex items-center gap-1 text-slate-500">
-              <button className="hidden md:flex items-center gap-1.5 hover:text-brand-blue transition-colors text-[13px] font-bold mr-1">
-                <Globe strokeWidth={1.25} className="w-5 h-5" />
-                <span>RU</span>
-              </button>
+            <div className="flex items-center gap-4 text-slate-500">
+              <div 
+                className="relative"
+                onMouseEnter={() => setIsLangDropdownOpen(true)}
+                onMouseLeave={() => setIsLangDropdownOpen(false)}
+              >
+                <button className="hidden md:flex items-center gap-1.5 hover:text-brand-blue transition-colors text-[13px] font-bold mr-2 h-10 select-none">
+                  <Globe strokeWidth={1.25} className="w-5 h-5" />
+                  <span>{currentLang}</span>
+                </button>
+                
+                <AnimatePresence>
+                  {isLangDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full bg-white shadow-2xl border border-slate-100 py-1 w-32 z-50 flex flex-col rounded-none"
+                    >
+                      <button
+                        onClick={() => {
+                          if (currentLang !== "RU") {
+                            toggleLanguage();
+                          }
+                          setIsLangDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "px-4 py-2.5 text-left text-xs font-bold transition-all hover:bg-slate-50",
+                          currentLang === "RU" ? "text-brand-blue" : "text-slate-400 hover:text-brand-blue"
+                        )}
+                      >
+                        Русский (RU)
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (currentLang !== "UZ") {
+                            toggleLanguage();
+                          }
+                          setIsLangDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "px-4 py-2.5 text-left text-xs font-bold transition-all hover:bg-slate-50 border-t border-slate-50",
+                          currentLang === "UZ" ? "text-brand-blue" : "text-slate-400 hover:text-brand-blue"
+                        )}
+                      >
+                        O'zbekcha (UZ)
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <button className="hover:text-brand-blue transition-colors p-0.5" onClick={() => setIsOpenSearch(true)}>
                 <Search strokeWidth={1.25} className="w-5 h-5" />
               </button>
-              <Link href="/auth" className="hover:text-brand-blue transition-colors p-0.5">
+              <Link href={profileLink} className="hover:text-brand-blue transition-colors p-0.5">
                 <User strokeWidth={1.25} className="w-5 h-5" />
               </Link>
               <button className="hover:text-brand-blue transition-colors relative p-0.5" onClick={() => setIsOpenCart(true)}>
@@ -155,7 +252,7 @@ export const Header = () => {
 
           {/* Logo (Centered) */}
           <div className="flex justify-center flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold tracking-tighter text-brand-blue whitespace-nowrap">
+            <Link href="/" className="text-2xl font-bold tracking-tighter text-brand-blue whitespace-nowrap notranslate" translate="no">
               LIBERTY<span className="text-slate-400">WEAR</span>
             </Link>
           </div>
@@ -169,7 +266,7 @@ export const Header = () => {
               <Search strokeWidth={1.25} size={20} />
             </button>
             <Link 
-              href="/auth" 
+              href={profileLink} 
               className="text-slate-500 hover:text-brand-blue transition-colors p-0.5"
             >
               <User strokeWidth={1.25} size={20} />
@@ -189,45 +286,74 @@ export const Header = () => {
 
       {/* Desktop Mega Menu Dropdown */}
       <AnimatePresence>
-        {activeMenu && categories.find(c => c.ID === activeMenu)?.children.length! > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="hidden xl:block absolute top-full left-0 right-0 bg-white shadow-xl border-t border-slate-50"
-            onMouseEnter={() => setActiveMenu(activeMenu)}
-          >
-            <div className="container mx-auto px-6 max-w-2xl py-12">
-               <div className="flex flex-col items-center gap-8">
-                  <h4 className="font-bold text-[10px] tracking-[0.3em] text-slate-400 uppercase">Подкатегории</h4>
-                  <ul className="grid grid-cols-2 gap-x-12 gap-y-4 w-full">
-                    {categories.find(c => c.ID === activeMenu)?.children.map((child) => (
-                      <li key={child.ID}>
+        {activeMenu && (
+          (() => {
+            const activeCategory = categories.find(c => c.ID === activeMenu);
+            if (!activeCategory || !activeCategory.children || activeCategory.children.length === 0) return null;
+            
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="hidden xl:block absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-slate-100/60 z-[60]"
+                onMouseEnter={() => setActiveMenu(activeMenu)}
+              >
+                <div className="container mx-auto px-12 max-w-7xl py-12">
+                  <div className="grid grid-cols-5 gap-8">
+                    {/* Columns of subcategories with their sub-subcategories */}
+                    {activeCategory.children.slice(0, 4).map((subcat) => (
+                      <div key={subcat.ID} className="space-y-4">
                         <Link 
-                          href={`/shop?category=${child.ID}`} 
-                          className="text-base text-brand-blue hover:text-slate-400 transition-colors flex items-center justify-between group/item border-b border-slate-50 pb-2"
+                          href={`/shop?category=${subcat.ID}`} 
+                          className="font-bold text-[10px] tracking-[0.2em] text-brand-blue uppercase hover:text-slate-400 transition-colors block pb-2 border-b border-slate-100"
                           onClick={() => setActiveMenu(null)}
                         >
-                          <span className="font-medium tracking-tight">{child.NAME}</span>
-                          <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-slate-300" />
+                          {subcat.NAME}
                         </Link>
-                      </li>
+                        {subcat.children && subcat.children.length > 0 && (
+                          <ul className="space-y-2">
+                            {subcat.children.map((subsub) => (
+                              <li key={subsub.ID}>
+                                <Link 
+                                  href={`/shop?category=${subsub.ID}`} 
+                                  className="text-[11px] font-medium tracking-wide text-slate-500 hover:text-brand-blue transition-colors block"
+                                  onClick={() => setActiveMenu(null)}
+                                >
+                                  {subsub.NAME}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     ))}
-                    <li>
-                        <Link 
-                          href={`/shop?category=${activeMenu}`} 
-                          className="text-base text-brand-blue font-bold hover:text-slate-400 transition-colors flex items-center justify-between group/item border-b border-slate-50 pb-2"
-                          onClick={() => setActiveMenu(null)}
-                        >
-                          <span className="tracking-tight">СМОТРЕТЬ ВСЁ</span>
-                          <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-slate-300" />
-                        </Link>
-                    </li>
-                  </ul>
-               </div>
-            </div>
-          </motion.div>
+                    
+                    {/* Editorial/Feature Column for Luxury look */}
+                    <div className="col-span-1 border-l border-slate-100 pl-8 space-y-4 flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <span className="text-[8px] font-bold tracking-[0.3em] text-slate-400 uppercase">Новинки</span>
+                        <h5 className="font-bold text-[14px] leading-tight text-brand-blue tracking-tight uppercase">
+                          Коллекция {getDisplayName(activeCategory.NAME)}
+                        </h5>
+                        <p className="text-[10px] text-slate-400 leading-relaxed font-sans font-medium">
+                          Откройте для себя последние тренды и новинки, выбранные нашими стилистами.
+                        </p>
+                      </div>
+                      <Link 
+                        href={`/shop?category=${activeCategory.ID}`} 
+                        className="inline-flex items-center text-[10px] font-bold tracking-[0.2em] text-brand-blue uppercase border-b border-brand-blue pb-0.5 hover:text-slate-400 hover:border-slate-400 transition-all self-start mt-4"
+                        onClick={() => setActiveMenu(null)}
+                      >
+                        СМОТРЕТЬ ВСЁ
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()
         )}
       </AnimatePresence>
 
@@ -269,24 +395,38 @@ export const Header = () => {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden bg-slate-50/50 px-4"
                         >
-                          <div className="py-4 space-y-4">
-                            <ul className="grid grid-cols-1 gap-4">
-                              {category.children.map((child) => (
-                                <li key={child.ID}>
+                          <div className="py-4 space-y-6">
+                            <div className="space-y-5">
+                              {category.children.map((subcat) => (
+                                <div key={subcat.ID} className="space-y-2.5">
                                   <Link 
-                                    href={`/shop?category=${child.ID}`} 
-                                    className="text-sm font-medium text-brand-blue/70 hover:text-brand-blue flex items-center justify-between"
+                                    href={`/shop?category=${subcat.ID}`} 
+                                    className="text-sm font-bold text-brand-blue tracking-tight block border-b border-slate-200/50 pb-1 uppercase"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                   >
-                                    {child.NAME}
-                                    <ChevronRight size={14} className="text-slate-300" />
+                                    {subcat.NAME}
                                   </Link>
-                                </li>
+                                  {subcat.children && subcat.children.length > 0 && (
+                                    <ul className="pl-3 space-y-2 border-l border-slate-200">
+                                      {subcat.children.map((subsub) => (
+                                        <li key={subsub.ID}>
+                                          <Link 
+                                            href={`/shop?category=${subsub.ID}`} 
+                                            className="text-xs font-medium text-slate-500 hover:text-brand-blue block py-0.5"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                          >
+                                            {subsub.NAME}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                             <Link 
                               href={`/shop?category=${category.ID}`}
-                              className="block pt-2 text-xs font-bold text-brand-blue underline underline-offset-4"
+                              className="block pt-2 text-xs font-bold text-brand-blue underline underline-offset-4 uppercase tracking-wider"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
                               Смотреть всё
@@ -315,12 +455,15 @@ export const Header = () => {
 
               {/* Mobile Actions - Pushed to bottom */}
               <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-5">
-                <button className="flex items-center gap-3 text-brand-blue font-bold text-xs">
+                <button 
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-3 text-brand-blue font-bold text-xs"
+                >
                   <Globe size={18} strokeWidth={1.5} className="text-slate-400" />
-                  <span>Русский (RU)</span>
+                  <span>{currentLang === "RU" ? "O'zbekcha (UZ)" : "Русский (RU)"}</span>
                 </button>
                 <Link 
-                  href="/auth" 
+                  href={profileLink} 
                   className="flex items-center gap-3 text-brand-blue font-bold text-xs"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

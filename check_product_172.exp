@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 120
+set pass "nE315uSK*?t#DQ"
+spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "sqlite3 /root/liberty-wear/backend/liberty_wear.db 'SELECT id, name FROM products WHERE id=172 OR bitrix_id=172;'"
+expect "*password:*"
+send -- "$pass\r"
+expect eof

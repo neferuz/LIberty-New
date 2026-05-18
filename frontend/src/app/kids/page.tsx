@@ -9,6 +9,7 @@ import { ShoppingBag, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
+import { formatSkuForUrl } from "@/lib/utils";
 
 const subcategories = ["Все", "Мальчики", "Девочки", "Малыши", "Верхняя одежда", "Обувь"];
 
@@ -144,7 +145,7 @@ export default function KidsCategoryPage() {
                       key={product.id} 
                       className="group relative"
                     >
-                      <Link href={`/product/${product.id}`}>
+                      <Link href={`/product/${(product as any).sku ? `${formatSkuForUrl((product as any).sku)}-` : ''}${product.id}`}>
                         <div className="relative aspect-[3/4] overflow-hidden bg-slate-50">
                           <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-brand-blue/10 z-10" />
                           <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-brand-blue/10 z-10" />
@@ -152,7 +153,7 @@ export default function KidsCategoryPage() {
                             src={product.image}
                             alt={product.name}
                             fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            className="object-contain transition-transform duration-700 group-hover:scale-105"
                           />
                           <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/5 transition-colors duration-500" />
                           
@@ -166,7 +167,7 @@ export default function KidsCategoryPage() {
                       
                       <div className="mt-6 flex justify-between items-start">
                         <div>
-                          <Link href={`/product/${product.id}`}>
+                          <Link href={`/product/${(product as any).sku ? `${formatSkuForUrl((product as any).sku)}-` : ''}${product.id}`}>
                             <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">{product.category}</p>
                             <h3 className="text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-500 transition-colors">{product.name}</h3>
                           </Link>

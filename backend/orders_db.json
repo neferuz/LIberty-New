@@ -1,0 +1,65 @@
+[
+  {
+    "id": "ORD-1125",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 12 23, кв. 23, 100001",
+    "date": "18 май, 04:37",
+    "total": "180 000 сум",
+    "status": "Cancelled",
+    "items": 2,
+    "items_list": [
+      {
+        "name": "Мужской свитшот базовый “Classic Navy”",
+        "quantity": 2,
+        "price": "90 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/a57/a574a1bd30d13fdd9905e88ed93a9758/20-1.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "При получении"
+  },
+  {
+    "id": "ORD-1123",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 12 23, кв. 23, 100001",
+    "date": "18 май, 04:36",
+    "total": "65 000 сум",
+    "status": "Cancelled",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Мужские шорты с принтом “Unlimited”",
+        "quantity": 1,
+        "price": "65 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/772/772920a6c57295ee066d34fffd18c015/21.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "При получении"
+  },
+  {
+    "id": "ORD-1115",
+    "customer": "notferuz@gmail.com",
+    "phone": "+998 90 123-45-67",
+    "address": "г. Ташкент, ул. Ойбек, д. 14, кв. 22",
+    "date": "2026-05-18 04:36",
+    "total": "90 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "id": 3123,
+        "name": "Мужской свитшот базовый “Classic Navy”",
+        "quantity": 1,
+        "price": "90 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/a57/a574a1bd30d13fdd9905e88ed93a9758/20-1.png",
+        "color": "Темно-синий",
+        "size": "M",
+        "category": "Мужские свитшоты"
+      }
+    ],
+    "method": "Курьерская доставка"
+  }
+]

@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     bitrix_contact_id: Optional[int] = None
     role: Optional[str] = "staff"
     is_active: Optional[bool] = True
+    addresses_json: Optional[str] = None
 
 class UserCreate(UserBase):
     email: EmailStr

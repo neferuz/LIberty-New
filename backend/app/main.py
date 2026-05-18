@@ -9,9 +9,20 @@ from app import models # Import models to ensure they are registered
 
 Base.metadata.create_all(bind=engine)
 
+# Inline database migration for addresses_json column
+try:
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN addresses_json TEXT"))
+        print("Successfully migrated: Added addresses_json column to users table.")
+except Exception as e:
+    # Column already exists, fail silently is normal
+    pass
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    redirect_slashes=False
 )
 
 # Set all CORS enabled origins

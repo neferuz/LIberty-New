@@ -35,7 +35,7 @@ export default function ContactPage() {
   const [status, setStatus] = useState<{ type: "success" | "error", text: string } | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/pages/contact")
+    fetch(`/api/v1/pages/contact?t=${Date.now()}`)
       .then(res => res.json())
       .then(json => {
         setData(json.data);
@@ -55,7 +55,7 @@ export default function ContactPage() {
     setStatus(null);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/inquiries/", {
+      const res = await fetch("/api/v1/inquiries/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
@@ -84,8 +84,49 @@ export default function ContactPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-blue" />
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="pt-32 pb-16 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+          <div className="container mx-auto px-6 max-w-7xl relative z-10 animate-pulse">
+            {/* Header Skeleton */}
+            <div className="mb-12 space-y-4">
+              <div className="h-3 w-24 bg-slate-100 rounded mx-auto lg:mx-0" />
+              <div className="h-12 md:h-16 w-1/2 bg-slate-100 rounded mx-auto lg:mx-0" />
+            </div>
+
+            {/* Split Content Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+              {/* Left Column Skeletons */}
+              <div className="lg:col-span-5 space-y-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex gap-5 items-start">
+                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 flex-shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 w-20 bg-slate-100 rounded" />
+                      <div className="h-4 w-4/5 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Column (Form) Skeletons */}
+              <div className="lg:col-span-7 bg-white border border-slate-100 p-8 md:p-12 space-y-8">
+                <div className="h-4 w-1/3 bg-slate-100 rounded" />
+                <div className="space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-3 w-16 bg-slate-100 rounded" />
+                      <div className="h-12 w-full bg-slate-50 border border-slate-100 rounded" />
+                    </div>
+                  ))}
+                  <div className="h-14 w-full bg-slate-100 rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }

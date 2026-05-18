@@ -31,7 +31,7 @@ export const ChatWidget = () => {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/chats/${getSessionId()}`);
+      const res = await fetch(`/api/v1/chats/${getSessionId()}`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data);
@@ -73,7 +73,7 @@ export const ChatWidget = () => {
       const userStr = localStorage.getItem("user");
       const user = userStr ? JSON.parse(userStr) : null;
 
-      const res = await fetch("http://localhost:8000/api/v1/chats/", {
+      const res = await fetch("/api/v1/chats/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

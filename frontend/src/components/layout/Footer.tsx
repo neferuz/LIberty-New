@@ -10,7 +10,7 @@ export const Footer = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/pages/settings");
+        const res = await fetch(`/api/v1/pages/settings?t=${Date.now()}`);
         if (res.ok) {
           const json = await res.json();
           if (json.data) setSettings(json.data);
@@ -66,7 +66,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
           {/* Brand Info */}
           <div className="md:col-span-4 space-y-4">
-            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tighter text-white">
+            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tighter text-white notranslate" translate="no">
               {footer.brandText.includes('LIBERTY') ? (
                 <>LIBERTY<span className="text-slate-400">WEAR</span></>
               ) : footer.brandText}

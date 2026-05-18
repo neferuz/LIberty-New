@@ -14,6 +14,7 @@ class User(Base):
     role = Column(String, default="staff") # admin, staff
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    addresses_json = Column(String, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

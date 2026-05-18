@@ -15,6 +15,7 @@ class Product(Base):
     category = Column(String, index=True)
     category_id = Column(Integer)
     image_url = Column(String, nullable=True)
+    images = Column(Text, nullable=True) # Comma separated gallery
     sizes = Column(String, nullable=True) # Comma separated
     composition = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
