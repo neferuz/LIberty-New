@@ -39,7 +39,7 @@ export const Footer = () => {
         links: [
           { label: "Новинки", href: "/shop" },
           { label: "Бестселлеры", href: "/shop" },
-          { label: "Коллекции", href: "/collections" }
+          { label: "Коллекции", href: "/shop" }
         ]
       },
       {
