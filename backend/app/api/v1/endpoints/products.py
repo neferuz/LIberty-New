@@ -268,6 +268,13 @@ async def read_product(
                         "xdT4Fm3j": "M",
                         "0SexOax9": "L",
                         "bahtl20Z": "XL",
+                        
+                        # Highload Block b_hlbd_razmery size hashes
+                        "2bb51496fe8b72b6aa984b8975ab528c": "XS",
+                        "ac7c6f452cc57aeca3ed9c14e0aa4d06": "S",
+                        "c4150de8d2bab3737740665dac14885f": "M",
+                        "526ba9f8e4f82e3ffa85b69dd75ff8e7": "L",
+                        "7dda4dcd82e2423ec6866c4643cf5857": "XL",
                     }
                     
                     variants_map = {}
