@@ -90,7 +90,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       setSearchLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8000/api/v1/search/?q=${encodeURIComponent(searchQuery)}`, {
+        const res = await fetch(`/api/v1/search/?q=${encodeURIComponent(searchQuery)}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (res.ok) {

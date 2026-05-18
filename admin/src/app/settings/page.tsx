@@ -113,7 +113,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/pages/settings?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/pages/settings?t=${Date.now()}`);
       if (res.ok) {
         const json = await res.json();
         const settings = json.data || defaultData;
@@ -143,7 +143,7 @@ export default function SettingsPage() {
     setMessage(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/pages/settings", {
+      const res = await fetch("/api/v1/pages/settings", {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

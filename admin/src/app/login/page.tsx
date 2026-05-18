@@ -23,7 +23,7 @@ export default function LoginPage() {
       formData.append("username", email);
       formData.append("password", password);
 
-      const response = await fetch("http://localhost:8000/api/v1/login/access-token", {
+      const response = await fetch("/api/v1/login/access-token", {
         method: "POST",
         body: formData,
       });

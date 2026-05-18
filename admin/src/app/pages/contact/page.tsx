@@ -47,7 +47,7 @@ export default function ContactAdminPage() {
 
   const fetchContact = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/pages/contact?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/pages/contact?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setContactData(data.data);
@@ -67,7 +67,7 @@ export default function ContactAdminPage() {
     setMessage(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/pages/contact", {
+      const res = await fetch("/api/v1/pages/contact", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

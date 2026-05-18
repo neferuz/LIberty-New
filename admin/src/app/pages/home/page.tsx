@@ -47,7 +47,7 @@ export default function HomePageEditor() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/pages/home");
+      const response = await fetch("/api/v1/pages/home");
       if (response.ok) {
         const result = await response.json();
         const data = result.data;
@@ -70,7 +70,7 @@ export default function HomePageEditor() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/v1/pages/home", {
+      const response = await fetch("/api/v1/pages/home", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -54,7 +54,7 @@ export default function FAQAdminPage() {
 
   const fetchFaq = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/pages/faq?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/pages/faq?t=${Date.now()}`);
       if (res.ok) {
         const json = await res.json();
         // Handle both old list-only and new object structures
@@ -92,7 +92,7 @@ export default function FAQAdminPage() {
     setMessage(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/pages/faq", {
+      const res = await fetch("/api/v1/pages/faq", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

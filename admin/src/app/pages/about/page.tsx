@@ -55,7 +55,7 @@ export default function AboutAdminPage() {
 
   const fetchAbout = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/pages/about?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/pages/about?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         const items = data.data || {};
@@ -76,7 +76,7 @@ export default function AboutAdminPage() {
     setMessage(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/pages/about", {
+      const res = await fetch("/api/v1/pages/about", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

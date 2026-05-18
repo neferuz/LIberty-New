@@ -64,8 +64,8 @@ export default function ProductsPage() {
     try {
       const t = Date.now();
       const [prodRes, catRes] = await Promise.all([
-        fetch(`http://localhost:8000/api/v1/products/?limit=500&t=${t}`),
-        fetch(`http://localhost:8000/api/v1/products/categories?t=${t}`)
+        fetch(`/api/v1/products/?limit=500&t=${t}`),
+        fetch(`/api/v1/products/categories?t=${t}`)
       ]);
       
       if (prodRes.ok) setProducts(await prodRes.json());

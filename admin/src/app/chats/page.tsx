@@ -61,7 +61,7 @@ export default function ChatsPage() {
   const fetchSessions = useCallback(async () => {
     if (document.visibilityState !== "visible") return;
     try {
-      const res = await fetch("http://localhost:8000/api/v1/chats/admin/list");
+      const res = await fetch("/api/v1/chats/admin/list");
       if (res.ok) {
         const data = await res.json();
         setSessions(prev => JSON.stringify(prev) === JSON.stringify(data) ? prev : data);
@@ -76,7 +76,7 @@ export default function ChatsPage() {
   const fetchMessages = useCallback(async (sessionId: string) => {
     if (document.visibilityState !== "visible" || !sessionId) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/chats/${sessionId}`);
+      const res = await fetch(`/api/v1/chats/${sessionId}`);
       if (res.ok) {
         const data = await res.json();
         setMessages(prev => JSON.stringify(prev) === JSON.stringify(data) ? prev : data);
@@ -109,7 +109,7 @@ export default function ChatsPage() {
     setSending(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/v1/chats/admin/reply?session_id=${selectedSession.session_id}&content=${encodeURIComponent(inputText)}`, {
+      const res = await fetch(`/api/v1/chats/admin/reply?session_id=${selectedSession.session_id}&content=${encodeURIComponent(inputText)}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

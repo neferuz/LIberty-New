@@ -38,7 +38,7 @@ export default function InquiriesPage() {
 
   const fetchInquiries = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/inquiries/?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/inquiries/?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setInquiries(data);
@@ -52,7 +52,7 @@ export default function InquiriesPage() {
 
   const updateStatus = async (id: number, status: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/inquiries/${id}/status?status_val=${status}`, {
+      const res = await fetch(`/api/v1/inquiries/${id}/status?status_val=${status}`, {
         method: "PUT"
       });
       if (res.ok) {

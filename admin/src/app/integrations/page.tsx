@@ -29,7 +29,7 @@ export default function IntegrationsPage() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/pages/bitrix_integration");
+      const response = await fetch("/api/v1/pages/bitrix_integration");
       if (response.ok) {
         const result = await response.json();
         setBitrixEnabled(result.data?.enabled ?? true);
@@ -45,7 +45,7 @@ export default function IntegrationsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/v1/pages/bitrix_integration", {
+      const response = await fetch("/api/v1/pages/bitrix_integration", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
