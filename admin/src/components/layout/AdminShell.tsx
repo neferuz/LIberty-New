@@ -137,17 +137,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen flex">
       {/* Sidebar */}
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0b0f19] border-r border-[#1e293b] flex flex-col sticky top-0 h-screen flex-shrink-0 z-[100]">
-        <div className="px-4 py-4 border-b border-[#1e293b]/70">
+      <aside className="w-64 bg-[#fafafb] border-r border-[#e2e8f0] flex flex-col sticky top-0 h-screen flex-shrink-0 z-[100]">
+        <div className="px-4 py-4 border-b border-[#e2e8f0]">
            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-tr from-[#3b82f6] to-[#6366f1] rounded-xl flex items-center justify-center text-[15px] font-black text-white shadow-lg shadow-indigo-500/20 shrink-0">
+              <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-[14px] font-black text-white shadow-sm shrink-0">
                 LW
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-black leading-tight truncate text-white uppercase tracking-[0.2em] font-sans">
+                <p className="text-[12px] font-black leading-tight truncate text-slate-900 uppercase tracking-[0.2em] font-sans">
                   Liberty Wear
                 </p>
-                <p className="text-[10px] text-slate-500 leading-none mt-1 uppercase tracking-wider font-semibold">
+                <p className="text-[9px] text-slate-400 leading-none mt-1 uppercase tracking-widest font-extrabold">
                   Панель управления
                 </p>
               </div>
@@ -157,7 +157,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <nav className="flex-1 px-3 py-4 space-y-7 overflow-y-auto scrollbar-hide">
           {/* Section: Управление */}
           <div>
-            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-500 uppercase mb-2">
+            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-400 uppercase mb-2">
               Управление
             </p>
             <div className="space-y-1">
@@ -170,21 +170,21 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group relative",
                       isActive 
-                        ? "text-white bg-slate-800/80 border border-slate-700/50 shadow-sm shadow-black/10" 
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                        ? "text-slate-900 bg-slate-100 border border-slate-200/50 shadow-sm" 
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
                     )}
                   >
                     {isActive && (
                       <motion.div 
                         layoutId="activeSideIndicator"
-                        className="absolute left-0 w-1 h-5 bg-[#3b82f6] rounded-full"
+                        className="absolute left-0 w-1 h-5 bg-slate-900 rounded-full"
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       />
                     )}
                     <item.icon 
                       className={cn(
                         "w-4 h-4 transition-transform duration-200 group-hover:scale-105", 
-                        isActive ? "text-[#3b82f6]" : "text-slate-400 group-hover:text-white"
+                        isActive ? "text-slate-900" : "text-slate-400 group-hover:text-slate-900"
                       )} 
                       strokeWidth={2} 
                     />
@@ -197,17 +197,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
           {/* Section: Контент */}
           <div>
-            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-500 uppercase mb-2">
+            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-400 uppercase mb-2">
               Контент
             </p>
             {pageSections.map((section) => (
               <div key={section.label} className="space-y-1">
                 <button 
                   onClick={() => setIsPagesOpen(!isPagesOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-slate-400 font-semibold hover:text-white hover:bg-slate-800/30 rounded-lg transition-all duration-200 group text-left"
+                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-slate-500 font-semibold hover:text-slate-900 hover:bg-slate-100/50 rounded-lg transition-all duration-200 group text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <section.icon className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} />
+                    <section.icon className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} />
                     {section.label}
                   </div>
                   <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isPagesOpen && "rotate-180")} />
@@ -220,7 +220,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden mt-0.5 ml-5 pl-3 border-l border-slate-800 space-y-1"
+                      className="overflow-hidden mt-0.5 ml-5 pl-3 border-l border-slate-200 space-y-1"
                     >
                       {section.subItems.map(sub => {
                         const isActive = pathname === sub.href;
@@ -231,12 +231,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                             className={cn(
                               "flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-150 relative",
                               isActive 
-                                ? "text-white bg-slate-800/50 border border-slate-700/30" 
-                                : "text-slate-400 hover:text-white hover:bg-slate-800/20"
+                                ? "text-slate-900 bg-slate-100/60 border border-slate-200/30" 
+                                : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/20"
                             )}
                           >
                             {isActive && (
-                              <div className="absolute left-[-13px] w-1 h-3 bg-[#3b82f6] rounded-full" />
+                              <div className="absolute left-[-13px] w-1.5 h-1.5 rounded-full bg-slate-900" />
                             )}
                             <span>{sub.label}</span>
                           </Link>
@@ -250,21 +250,21 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#1e293b] space-y-1 bg-[#0b0f19]">
+        <div className="px-3 py-4 border-t border-[#e2e8f0] space-y-1 bg-[#fafafb]">
            <Link 
              href="/settings" 
              className={cn(
                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group",
                pathname === "/settings" 
-                 ? "text-white bg-slate-800 border border-slate-700/50" 
-                 : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                 ? "text-slate-900 bg-slate-100 border border-slate-200/50" 
+                 : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
              )}
            >
-              <Settings className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} /> 
+              <Settings className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} /> 
               Настройки
            </Link>
-           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/30 transition-all duration-200 group text-left">
-              <Code className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} /> 
+           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 transition-all duration-200 group text-left">
+              <Code className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} /> 
               Разработчикам
            </button>
         </div>
