@@ -63,24 +63,35 @@ async def sync_single_product(product_id: int, db: Session):
             'select': ['id', 'iblockId', 'property131']
         })
         offer_list = offers.get('offers', []) if isinstance(offers, dict) else []
-        for offer in offer_list:
-            o_img_res = await bitrix_service._call('catalog.productImage.list', {'productId': offer['id']})
-            o_imgs = o_img_res.get('productImages', []) if isinstance(o_img_res, dict) else []
-            for o_img in o_imgs:
-                url = o_img.get('detailUrl')
-                if url and url not in all_images:
-                    all_images.append(url)
+        
+        # Parallel fetch images for all offers
+        import asyncio
+        if offer_list:
+            coroutines = [
+                bitrix_service._call('catalog.productImage.list', {'productId': offer['id']})
+                for offer in offer_list
+            ]
+            images_responses = await asyncio.gather(*coroutines, return_exceptions=True)
             
-            size_val = offer.get('property131')
-            size_hash = None
-            if isinstance(size_val, dict):
-                size_hash = size_val.get('value')
-            elif size_val:
-                size_hash = str(size_val)
-                
-            mapped_size = size_names_mapping.get(size_hash, size_hash)
-            if mapped_size and mapped_size not in offer_sizes:
-                offer_sizes.append(mapped_size)
+            for idx, offer in enumerate(offer_list):
+                o_img_res = images_responses[idx]
+                if isinstance(o_img_res, dict):
+                    o_imgs = o_img_res.get('productImages', [])
+                    for o_img in o_imgs:
+                        url = o_img.get('detailUrl')
+                        if url and url not in all_images:
+                            all_images.append(url)
+                            
+                size_val = offer.get('property131')
+                size_hash = None
+                if isinstance(size_val, dict):
+                    size_hash = size_val.get('value')
+                elif size_val:
+                    size_hash = str(size_val)
+                    
+                mapped_size = size_names_mapping.get(size_hash, size_hash)
+                if mapped_size and mapped_size not in offer_sizes:
+                    offer_sizes.append(mapped_size)
         
         # 2. Try the product itself catalog image list
         img_res = await bitrix_service._call('catalog.productImage.list', {'productId': bitrix_id})

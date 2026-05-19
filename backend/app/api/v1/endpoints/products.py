@@ -142,6 +142,21 @@ def create_product(
 IS_SYNCING = False
 LAST_SYNC_RESULT = None
 
+async def sync_single_product_task(pid: int, semaphore: asyncio.Semaphore):
+    async with semaphore:
+        from app.db.session import SessionLocal
+        from app.api.v1.endpoints.bitrix_webhooks import sync_single_product
+        db_session = SessionLocal()
+        try:
+            await sync_single_product(pid, db_session)
+            return True
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Sync task error for product {pid}: {str(e)}")
+            return False
+        finally:
+            db_session.close()
+
 async def run_sync_in_background(db: Session):
     global IS_SYNCING, LAST_SYNC_RESULT
     IS_SYNCING = True
@@ -156,22 +171,15 @@ async def run_sync_in_background(db: Session):
             }
             return
         
-        from app.api.v1.endpoints.bitrix_webhooks import sync_single_product
+        # 2. Sync each product in parallel with a semaphore limit of 5
+        import asyncio
+        semaphore = asyncio.Semaphore(5)
+        tasks = [sync_single_product_task(int(p["ID"]), semaphore) for p in bitrix_prods]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        synced_count = 0
-        errors_count = 0
+        synced_count = sum(1 for r in results if r is True)
+        errors_count = len(results) - synced_count
         
-        # 2. Iterate and sync each product
-        for p in bitrix_prods:
-            try:
-                pid = int(p["ID"])
-                await sync_single_product(pid, db)
-                synced_count += 1
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f"Background sync error for ID {p.get('ID')}: {str(e)}")
-                errors_count += 1
-                
         LAST_SYNC_RESULT = {
             "status": "success",
             "synced_count": synced_count,
