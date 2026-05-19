@@ -41,6 +41,7 @@ function ShopContent() {
   const [priceRange, setPriceRange] = useState<number>(1000000);
   const [activeSort, setActiveSort] = useState("default");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(12);
   const { addItem } = useCart();
 
   const selectCategory = (id: string) => {
@@ -56,6 +57,10 @@ function ShopContent() {
     const catId = searchParams.get("category");
     setActiveCategoryId(catId || "all");
   }, [searchParams]);
+
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [activeCategoryId, searchQuery, priceRange, activeSort]);
 
   const fetchData = async () => {
     try {
@@ -166,11 +171,16 @@ function ShopContent() {
     return list;
   }, [products, activeCategoryId, searchQuery, priceRange, activeSort, getCategoryDescendants]);
 
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
   const resetFilters = () => {
     setActiveCategoryId("all");
     setSearchQuery("");
     setPriceRange(maxPrice);
     setIsFilterOpen(false);
+    setVisibleCount(12);
   };
 
   // Helper to render the collapsible vertical category tree
@@ -429,7 +439,7 @@ function ShopContent() {
 
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 md:gap-x-8 gap-y-8 md:gap-y-16">
                 <AnimatePresence mode="popLayout">
-                  {filteredProducts.map((product) => (
+                  {paginatedProducts.map((product) => (
                     <motion.div 
                       layout
                       initial={{ opacity: 0 }}
@@ -511,6 +521,17 @@ function ShopContent() {
                   ))}
                 </AnimatePresence>
               </div>
+
+              {filteredProducts.length > visibleCount && (
+                <div className="mt-12 md:mt-16 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 12)}
+                    className="h-11 px-8 border border-brand-blue/10 hover:border-brand-blue/30 text-brand-blue text-[10px] font-bold uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <span>Загрузить еще</span>
+                  </button>
+                </div>
+              )}
 
               {filteredProducts.length === 0 && (
                 <div className="py-16 md:py-24 flex flex-col items-center justify-center text-center font-sans">
