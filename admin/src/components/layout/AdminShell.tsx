@@ -66,6 +66,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPagesOpen, setIsPagesOpen] = useState(true);
   const profileRef = useRef<HTMLDivElement>(null);
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,68 +136,136 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#f7f8f9] border-r border-[#e3e8ee] flex flex-col sticky top-0 h-screen flex-shrink-0 z-[100]">
-        <div className="px-3 py-3">
-           <button className="w-full flex items-center gap-2 p-1.5 hover:bg-[#e3e8ee] transition-colors rounded-lg group text-left">
-              <div className="w-8 h-8 bg-white border border-[#e3e8ee] rounded flex items-center justify-center text-[13px] font-bold text-slate-900 flex-shrink-0 shadow-sm">L</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold leading-none truncate">Liberty sandbox</p>
-                <p className="text-[11px] text-[#4f566b] leading-tight truncate">Liberty</p>
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#0b0f19] border-r border-[#1e293b] flex flex-col sticky top-0 h-screen flex-shrink-0 z-[100]">
+        <div className="px-4 py-4 border-b border-[#1e293b]/70">
+           <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-tr from-[#3b82f6] to-[#6366f1] rounded-xl flex items-center justify-center text-[15px] font-black text-white shadow-lg shadow-indigo-500/20 shrink-0">
+                LW
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-[#4f566b] group-hover:text-slate-900 transition-colors flex-shrink-0" />
-           </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-black leading-tight truncate text-white uppercase tracking-[0.2em] font-sans">
+                  Liberty Wear
+                </p>
+                <p className="text-[10px] text-slate-500 leading-none mt-1 uppercase tracking-wider font-semibold">
+                  Панель управления
+                </p>
+              </div>
+           </div>
         </div>
 
-        <nav className="flex-1 px-2.5 py-1 space-y-0.5 overflow-y-auto scrollbar-hide">
-          <div className="space-y-0.5 mb-6">
-            <p className="px-3 py-3 text-[11px] font-medium text-[#4f566b]">Управление</p>
-            {mainNav.map((item) => (
-              <Link key={item.label} href={item.href} className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all",
-                pathname === item.href ? "text-[#2c3b6e] bg-white border border-[#e3e8ee]/50 shadow-sm" : "text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#e3e8ee]/50"
-              )}>
-                <item.icon className={cn("w-5 h-5", pathname === item.href ? "text-[#2c3b6e]" : "text-[#4f566b]")} strokeWidth={1.5} />
-                {item.label}
-              </Link>
-            ))}
+        <nav className="flex-1 px-3 py-4 space-y-7 overflow-y-auto scrollbar-hide">
+          {/* Section: Управление */}
+          <div>
+            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-500 uppercase mb-2">
+              Управление
+            </p>
+            <div className="space-y-1">
+              {mainNav.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link 
+                    key={item.label} 
+                    href={item.href} 
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group relative",
+                      isActive 
+                        ? "text-white bg-slate-800/80 border border-slate-700/50 shadow-sm shadow-black/10" 
+                        : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeSideIndicator"
+                        className="absolute left-0 w-1 h-5 bg-[#3b82f6] rounded-full"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    )}
+                    <item.icon 
+                      className={cn(
+                        "w-4 h-4 transition-transform duration-200 group-hover:scale-105", 
+                        isActive ? "text-[#3b82f6]" : "text-slate-400 group-hover:text-white"
+                      )} 
+                      strokeWidth={2} 
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
+          {/* Section: Контент */}
           <div>
-            <p className="px-3 text-[11px] font-medium text-[#4f566b] mb-2">Контент</p>
+            <p className="px-3 text-[10px] font-extrabold tracking-[0.25em] text-slate-500 uppercase mb-2">
+              Контент
+            </p>
             {pageSections.map((section) => (
-              <div key={section.label}>
-                <button className="w-full flex items-center justify-between px-3 py-2 text-[14px] text-[#4f566b] font-medium hover:text-[#1a1f36] hover:bg-[#e3e8ee]/50 rounded-lg transition-all group">
+              <div key={section.label} className="space-y-1">
+                <button 
+                  onClick={() => setIsPagesOpen(!isPagesOpen)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-slate-400 font-semibold hover:text-white hover:bg-slate-800/30 rounded-lg transition-all duration-200 group text-left"
+                >
                   <div className="flex items-center gap-3">
-                    <section.icon className="w-5 h-5" strokeWidth={1.5} />
+                    <section.icon className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} />
                     {section.label}
                   </div>
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isPagesOpen && "rotate-180")} />
                 </button>
-                <div className="mt-1 ml-9 space-y-1 pb-2">
-                  {section.subItems.map(sub => {
-                    const isActive = pathname === sub.href;
-                    return (
-                      <Link key={sub.label} href={sub.href} className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all group relative",
-                        isActive ? "text-[#2c3b6e] bg-[#f7f8f9] border border-[#e3e8ee]" : "text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#f7f8f9]"
-                      )}>
-                        {isActive && <div className="absolute left-0 w-1 h-4 bg-[#2c3b6e] rounded-full" />}
-                        <span className={cn(isActive && "ml-1")}>{sub.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
+                
+                <AnimatePresence initial={false}>
+                  {isPagesOpen && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden mt-0.5 ml-5 pl-3 border-l border-slate-800 space-y-1"
+                    >
+                      {section.subItems.map(sub => {
+                        const isActive = pathname === sub.href;
+                        return (
+                          <Link 
+                            key={sub.label} 
+                            href={sub.href} 
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-150 relative",
+                              isActive 
+                                ? "text-white bg-slate-800/50 border border-slate-700/30" 
+                                : "text-slate-400 hover:text-white hover:bg-slate-800/20"
+                            )}
+                          >
+                            {isActive && (
+                              <div className="absolute left-[-13px] w-1 h-3 bg-[#3b82f6] rounded-full" />
+                            )}
+                            <span>{sub.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
         </nav>
 
-        <div className="px-2.5 py-4 border-t border-[#e3e8ee] space-y-0.5">
-           <Link href="/settings" className="flex items-center gap-3 px-3 py-2 text-[14px] text-[#4f566b] font-medium hover:text-[#1a1f36] hover:bg-[#e3e8ee]/50 rounded-lg transition-all">
-              <Settings className="w-5 h-5" strokeWidth={1.5} /> Настройки
+        <div className="px-3 py-4 border-t border-[#1e293b] space-y-1 bg-[#0b0f19]">
+           <Link 
+             href="/settings" 
+             className={cn(
+               "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group",
+               pathname === "/settings" 
+                 ? "text-white bg-slate-800 border border-slate-700/50" 
+                 : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+             )}
+           >
+              <Settings className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} /> 
+              Настройки
            </Link>
-           <button className="w-full flex items-center gap-3 px-3 py-2 text-[14px] text-[#4f566b] font-medium hover:text-[#1a1f36] hover:bg-[#e3e8ee]/50 rounded-lg transition-all">
-              <Code className="w-5 h-5" strokeWidth={1.5} /> Разработчикам
+           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold text-slate-400 hover:text-white hover:bg-slate-800/30 transition-all duration-200 group text-left">
+              <Code className="w-4 h-4 text-slate-400 group-hover:text-white" strokeWidth={2} /> 
+              Разработчикам
            </button>
         </div>
       </aside>
