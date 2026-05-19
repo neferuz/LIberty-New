@@ -14,6 +14,30 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'bitrix24.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.payme.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'payme.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'click.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'm.click.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
       }
     ],
   },
