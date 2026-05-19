@@ -143,13 +143,13 @@ def create_product(
 IS_SYNCING = False
 LAST_SYNC_RESULT = None
 
-async def sync_single_product_task(pid: int, semaphore: asyncio.Semaphore):
+async def sync_single_product_task(pid: int, semaphore: asyncio.Semaphore, category_map: dict):
     async with semaphore:
         from app.db.session import SessionLocal
         from app.api.v1.endpoints.bitrix_webhooks import sync_single_product
         db_session = SessionLocal()
         try:
-            await sync_single_product(pid, db_session)
+            await sync_single_product(pid, db_session, category_map)
             return True
         except Exception as e:
             import logging
@@ -172,10 +172,14 @@ async def run_sync_in_background(db: Session):
             }
             return
         
+        # Fetch category map once to pass to all sync tasks (avoids redundant listing calls)
+        sections = await bitrix_service._call('crm.productsection.list', {'filter': {'CATALOG_ID': 15}})
+        category_map = {int(s['ID']): s['NAME'] for s in sections} if isinstance(sections, list) else {}
+        
         # 2. Sync each product in parallel with a semaphore limit of 5
         import asyncio
         semaphore = asyncio.Semaphore(5)
-        tasks = [sync_single_product_task(int(p["ID"]), semaphore) for p in bitrix_prods]
+        tasks = [sync_single_product_task(int(p["ID"]), semaphore, category_map) for p in bitrix_prods]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         synced_count = sum(1 for r in results if r is True)

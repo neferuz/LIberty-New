@@ -8,7 +8,7 @@ import logging
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-async def sync_single_product(product_id: int, db: Session):
+async def sync_single_product(product_id: int, db: Session, category_map: dict = None):
     """Fetch specific product from Bitrix and update local DB"""
     try:
         logger.info(f"Webhook: Syncing product ID {product_id}")
@@ -129,8 +129,9 @@ async def sync_single_product(product_id: int, db: Session):
             sku = f"LW-{bitrix_id}"
 
         # Fetch categories to map category name
-        sections = await bitrix_service._call('crm.productsection.list', {'filter': {'CATALOG_ID': 15}})
-        category_map = {int(s['ID']): s['NAME'] for s in sections} if isinstance(sections, list) else {}
+        if category_map is None:
+            sections = await bitrix_service._call('crm.productsection.list', {'filter': {'CATALOG_ID': 15}})
+            category_map = {int(s['ID']): s['NAME'] for s in sections} if isinstance(sections, list) else {}
         
         section_id = int(p.get('SECTION_ID', 0))
         category_name = category_map.get(section_id, "General")
