@@ -61,28 +61,28 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="bg-brand-blue text-white pt-4 pb-12 md:py-12 border-t border-white/5">
+    <footer className="bg-brand-blue text-white pt-10 pb-16 md:py-16 border-t border-white/5 font-sans">
       <div className="container mx-auto px-6 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
           {/* Brand Info */}
           <div className="md:col-span-4 space-y-4">
-            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tighter text-white notranslate" translate="no">
+            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tighter text-white notranslate block" translate="no">
               {footer.brandText.includes('LIBERTY') ? (
                 <>LIBERTY<span className="text-slate-400">WEAR</span></>
               ) : footer.brandText}
             </Link>
             <div className="space-y-1">
-              <p className="text-[9px] md:text-[10px] text-slate-500 tracking-widest uppercase">{company.name}</p>
-              <p className="text-[9px] md:text-[10px] text-slate-500 tracking-widest uppercase">ИНН: {company.inn} | ОГРН: {company.ogrn}</p>
+              <p className="text-[9px] md:text-[10px] text-slate-500 tracking-wider uppercase font-medium">{company.name}</p>
+              <p className="text-[9px] md:text-[10px] text-slate-500 tracking-wider uppercase font-medium">ИНН: {company.inn} | ОГРН: {company.ogrn}</p>
             </div>
-            <div className="flex gap-3 pt-1">
-              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all">
+            <div className="flex gap-2 pt-1">
+              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all duration-300">
                 <Globe className="w-3.5 h-3.5" />
               </Link>
-              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all">
+              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all duration-300">
                 <Share2 className="w-3.5 h-3.5" />
               </Link>
-              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all">
+              <Link href="#" className="w-8 h-8 border border-white/10 flex items-center justify-center hover:bg-white hover:text-brand-blue transition-all duration-300">
                 <Send className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -91,11 +91,15 @@ export const Footer = () => {
           {/* Quick Links Container */}
           <div className="md:col-span-4 grid grid-cols-2 gap-4">
             {footer.sections.map((section: any, idx: number) => (
-              <div key={idx}>
-                <h4 className="font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] mb-3 md:mb-4 text-white">{section.title}</h4>
-                <ul className="space-y-2 text-[9px] md:text-[10px] text-slate-400 uppercase">
+              <div key={idx} className="space-y-3">
+                <h4 className="font-bold text-[9px] md:text-[10px] uppercase tracking-wider text-white border-b border-white/5 pb-1">{section.title}</h4>
+                <ul className="space-y-2 text-[9px] md:text-[10px] text-slate-400 uppercase tracking-wide">
                   {section.links.map((link: any, lIdx: number) => (
-                    <li key={lIdx}><Link href={link.href} className="hover:text-white transition-colors">{link.label}</Link></li>
+                    <li key={lIdx}>
+                      <Link href={link.href} className="hover:text-white transition-colors duration-200 block py-0.5">
+                        {link.label}
+                      </Link>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -103,39 +107,47 @@ export const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="md:col-span-4 space-y-3 md:space-y-4">
-            <h4 className="font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] mb-3 md:mb-4 text-white">Контакты</h4>
-            <ul className="space-y-2 text-[9px] md:text-[10px] text-slate-400 uppercase">
-              <li className="flex items-center gap-2">
-                <Phone className="w-3 h-3 text-slate-500" strokeWidth={1.5} />
-                <a href={`tel:${company.phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors">{company.phone}</a>
+          <div className="md:col-span-4 space-y-3">
+            <h4 className="font-bold text-[9px] md:text-[10px] uppercase tracking-wider text-white border-b border-white/5 pb-1">Контакты</h4>
+            <ul className="space-y-2 text-[9px] md:text-[10px] text-slate-400 uppercase tracking-wide">
+              <li className="flex items-center gap-2.5">
+                <Phone className="w-3 h-3 text-slate-500 flex-shrink-0" strokeWidth={1.5} />
+                <a href={`tel:${company.phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors duration-200">
+                  {company.phone}
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-3 h-3 text-slate-500" strokeWidth={1.5} />
-                <a href={`mailto:${company.email}`} className="hover:text-white transition-colors">{company.email}</a>
+              <li className="flex items-center gap-2.5">
+                <Mail className="w-3 h-3 text-slate-500 flex-shrink-0" strokeWidth={1.5} />
+                <a href={`mailto:${company.email}`} className="hover:text-white transition-colors duration-200">
+                  {company.email}
+                </a>
               </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="w-3 h-3 text-slate-500 mt-0.5" strokeWidth={1.5} />
-                <span className="leading-tight lowercase">{company.address}</span>
+              <li className="flex items-start gap-2.5">
+                <MapPin className="w-3 h-3 text-slate-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span className="leading-tight text-slate-400 uppercase">
+                  {company.address}
+                </span>
               </li>
             </ul>
           </div>
         </div>
         
         {/* Legal Disclaimers */}
-        <div className="mt-8 pt-6 border-t border-white/5 text-[8px] text-slate-500 leading-tight">
-          <p className="mb-2 max-w-3xl">
+        <div className="mt-8 pt-6 border-t border-white/5 text-[8px] text-slate-500 uppercase tracking-wide leading-relaxed space-y-2">
+          <p className="max-w-3xl text-slate-500">
             {footer.disclaimer}
           </p>
-          <p className="opacity-60">
+          <p className="text-slate-600">
             {footer.copyright}
           </p>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[8px] md:text-[9px] text-slate-500 uppercase tracking-widest">
+        <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider">
           <div className="flex gap-6">
             {legalLinks.map((link: any, idx: number) => (
-              <Link key={idx} href={link.href} className="hover:text-white transition-colors">{link.label}</Link>
+              <Link key={idx} href={link.href} className="hover:text-white transition-colors duration-200">
+                {link.label}
+              </Link>
             ))}
           </div>
         </div>

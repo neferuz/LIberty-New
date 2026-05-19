@@ -24,7 +24,7 @@ class InquiryOut(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/", response_model=InquiryOut)
+@router.post("", response_model=InquiryOut)
 def create_inquiry(inquiry_in: InquiryCreate, db: Session = Depends(get_db)):
     db_obj = ContactInquiry(
         name=inquiry_in.name,
@@ -36,7 +36,7 @@ def create_inquiry(inquiry_in: InquiryCreate, db: Session = Depends(get_db)):
     db.refresh(db_obj)
     return db_obj
 
-@router.get("/", response_model=List[InquiryOut])
+@router.get("", response_model=List[InquiryOut])
 def list_inquiries(db: Session = Depends(get_db)):
     return db.query(ContactInquiry).order_by(ContactInquiry.created_at.desc()).all()
 

@@ -65,7 +65,9 @@ def read_page_content(
                     "title2": "Простоты",
                     "description": "Продуманные вещи, которые плавно переходят из сезона в сезон.",
                     "button1": "В магазин",
+                    "button1Href": "/shop",
                     "button2": "Лукбук",
+                    "button2Href": "/lookbook",
                     "imageUrl": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2040&auto=format&fit=crop"
                 },
                 "newsletter": {

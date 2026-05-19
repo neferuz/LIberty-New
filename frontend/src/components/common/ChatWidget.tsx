@@ -33,9 +33,9 @@ export const ChatWidget = () => {
       localStorage.setItem("chat_session_id", Math.random().toString(36).substring(7));
     }
 
-    const isSubmitted = localStorage.getItem("chat_contacts_submitted") === "true";
-    const isLoggedIn = !!localStorage.getItem("token") || !!localStorage.getItem("user");
-    if (isSubmitted || isLoggedIn) {
+    const sessId = localStorage.getItem("chat_session_id") || "guest";
+    const isSubmitted = localStorage.getItem(`chat_contacts_submitted_${sessId}`) === "true";
+    if (isSubmitted) {
       setContactsSubmitted(true);
     }
   }, []);
@@ -87,7 +87,7 @@ export const ChatWidget = () => {
     try {
       const contactPayload = `[Контакты] Имя: ${guestName.trim()}, Телефон: ${guestPhone.trim()}, Email: ${guestEmail.trim()}`;
       
-      const res = await fetch("/api/v1/chats/", {
+      const res = await fetch("/api/v1/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,7 +98,8 @@ export const ChatWidget = () => {
       });
 
       if (res.ok) {
-        localStorage.setItem("chat_contacts_submitted", "true");
+        const sessId = getSessionId();
+        localStorage.setItem(`chat_contacts_submitted_${sessId}`, "true");
         localStorage.setItem("chat_guest_name", guestName.trim());
         localStorage.setItem("chat_guest_phone", guestPhone.trim());
         localStorage.setItem("chat_guest_email", guestEmail.trim());
@@ -118,10 +119,17 @@ export const ChatWidget = () => {
 
     setLoading(true);
     try {
-      const userStr = localStorage.getItem("user");
-      const user = userStr ? JSON.parse(userStr) : null;
+      let user = null;
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr && userStr !== "undefined") {
+          user = JSON.parse(userStr);
+        }
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+      }
 
-      const res = await fetch("/api/v1/chats/", {
+      const res = await fetch("/api/v1/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

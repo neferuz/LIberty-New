@@ -14,7 +14,8 @@ import {
   Plus,
   Trash2,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -250,46 +251,47 @@ export default function SettingsPage() {
 
   return (
     <>
-      {/* Toast Notification */}
-      <div className="fixed top-8 right-8 z-[120] pointer-events-none">
-        <AnimatePresence>
-          {message && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="min-w-[320px] p-4 rounded-lg shadow-2xl flex items-center gap-4 pointer-events-auto bg-[#1a1f36] text-white border border-white/10 backdrop-blur-xl"
-            >
-              <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                message.type === "success" ? "bg-[#10b981]" : "bg-[#cd5c5c]"
-              )}>
-                {message.type === "success" ? <CheckCircle2 className="w-5 h-5 text-white" /> : <AlertCircle className="w-5 h-5 text-white" />}
-              </div>
-              <div className="flex-1">
-                <p className="text-[14px] font-bold tracking-tight">{message.type === "success" ? "Успешно" : "Ошибка"}</p>
-                <p className="text-[12px] text-white/70 font-medium">{message.text}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Dynamic Toast Notification */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-[12px] font-black bg-white"
+            style={{
+              borderColor: message.type === "success" ? "#e3e8ee" : "#fcd5d5",
+              color: message.type === "success" ? "#0f172a" : "#991b1b"
+            }}
+          >
+            {message.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            )}
+            <span>{message.text}</span>
+            <button onClick={() => setMessage(null)} className="ml-2 text-slate-400 hover:text-slate-900 cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete Modal */}
       <AnimatePresence>
         {deleteConfirm && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDeleteConfirm(null)} className="fixed inset-0 bg-black/70 backdrop-blur-md cursor-pointer" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden z-[111] mx-4">
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDeleteConfirm(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm cursor-pointer" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden z-[111] mx-4 border border-[#e3e8ee]">
               <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-[#cd5c5c]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Trash2 className="w-8 h-8 text-[#cd5c5c]" />
+                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-5 h-5 text-red-600" />
                 </div>
-                <h3 className="text-[18px] font-bold text-[#1a1f36] mb-2">Удалить ссылку?</h3>
-                <p className="text-[14px] text-[#4f566b] mb-6 px-4">Это действие удалит ссылку <span className="font-bold">"{data.footer.sections[deleteConfirm.sIdx].links[deleteConfirm.lIdx].label}"</span>.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2.5 text-[13px] font-bold text-[#4f566b] bg-[#f7f8f9] rounded-xl hover:bg-[#e3e8ee] transition-all">Отмена</button>
-                  <button onClick={() => removeLink(deleteConfirm.sIdx, deleteConfirm.lIdx)} className="px-4 py-2.5 text-[13px] font-bold text-white bg-[#cd5c5c] rounded-xl hover:bg-[#b34b4b] transition-all">Удалить</button>
+                <h3 className="text-[16px] font-black text-slate-900 mb-1">Удалить ссылку?</h3>
+                <p className="text-[13px] text-[#4f566b] mb-6 px-2 leading-relaxed">Это действие удалит ссылку <span className="font-bold">"{data.footer.sections[deleteConfirm.sIdx].links[deleteConfirm.lIdx].label}"</span>.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setDeleteConfirm(null)} className="px-3 py-2 text-[12px] font-black text-[#4f566b] bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg hover:bg-slate-50 transition-all cursor-pointer">Отмена</button>
+                  <button onClick={() => removeLink(deleteConfirm.sIdx, deleteConfirm.lIdx)} className="px-3 py-2 text-[12px] font-black text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all cursor-pointer">Удалить</button>
                 </div>
               </div>
             </motion.div>
@@ -298,6 +300,7 @@ export default function SettingsPage() {
       </AnimatePresence>
 
       <div className="space-y-6 animate-in fade-in duration-700 pb-32">
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5">Глобальные настройки</h1>
@@ -308,8 +311,10 @@ export default function SettingsPage() {
               onClick={handleSave}
               disabled={saving || !hasUnsavedChanges}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-all border",
-                hasUnsavedChanges ? "text-white bg-[#2c3b6e] border-[#2c3b6e] hover:bg-[#232f58]" : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
+                "flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-all border cursor-pointer",
+                hasUnsavedChanges 
+                  ? "text-white bg-slate-900 border-slate-900 hover:bg-slate-800" 
+                  : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
               )}
             >
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -319,87 +324,144 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden">
-              <div className="bg-[#f7f8f9]/50 px-4 py-2.5 border-b border-[#e3e8ee] flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#2c3b6e]" />
-                <h2 className="text-[13px] font-bold text-[#1a1f36] uppercase tracking-wider">Данные компании</h2>
+            {/* Company Block */}
+            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+              <div className="bg-[#f7f8f9] px-4 py-3 border-b border-[#e3e8ee] flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-slate-800" />
+                <h2 className="text-[11px] font-black text-[#4f566b] uppercase tracking-wider">Данные компании</h2>
               </div>
               <div className="p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Название организации</label>
-                  <input type="text" value={data.company.name} onChange={(e) => setData({...data, company: {...data.company, name: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Название организации</label>
+                  <input 
+                    type="text" 
+                    value={data.company.name} 
+                    onChange={(e) => setData({...data, company: {...data.company, name: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all duration-200" 
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">ИНН</label>
-                    <input type="text" value={data.company.inn} onChange={(e) => setData({...data, company: {...data.company, inn: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all" />
+                    <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">ИНН</label>
+                    <input 
+                      type="text" 
+                      value={data.company.inn} 
+                      onChange={(e) => setData({...data, company: {...data.company, inn: e.target.value}})} 
+                      className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all duration-200" 
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">ОГРН</label>
-                    <input type="text" value={data.company.ogrn} onChange={(e) => setData({...data, company: {...data.company, ogrn: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all" />
+                    <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">ОГРН</label>
+                    <input 
+                      type="text" 
+                      value={data.company.ogrn} 
+                      onChange={(e) => setData({...data, company: {...data.company, ogrn: e.target.value}})} 
+                      className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all duration-200" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Юридический адрес</label>
-                  <textarea value={data.company.address} onChange={(e) => setData({...data, company: {...data.company, address: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all h-20 resize-none leading-relaxed" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Юридический адрес</label>
+                  <textarea 
+                    value={data.company.address} 
+                    onChange={(e) => setData({...data, company: {...data.company, address: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all h-20 resize-none leading-relaxed duration-200" 
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden">
-              <div className="bg-[#f7f8f9]/50 px-4 py-2.5 border-b border-[#e3e8ee] flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-[#2c3b6e]" />
-                <h2 className="text-[13px] font-bold text-[#1a1f36] uppercase tracking-wider">Контакты поддержки</h2>
+            {/* Contacts Block */}
+            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+              <div className="bg-[#f7f8f9] px-4 py-3 border-b border-[#e3e8ee] flex items-center gap-2.5">
+                <Phone className="w-4 h-4 text-slate-800" />
+                <h2 className="text-[11px] font-black text-[#4f566b] uppercase tracking-wider">Контакты поддержки</h2>
               </div>
               <div className="p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Телефон для связи</label>
-                  <input type="text" value={data.company.phone} onChange={(e) => setData({...data, company: {...data.company, phone: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Телефон для связи</label>
+                  <input 
+                    type="text" 
+                    value={data.company.phone} 
+                    onChange={(e) => setData({...data, company: {...data.company, phone: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all duration-200" 
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Email адрес</label>
-                  <input type="text" value={data.company.email} onChange={(e) => setData({...data, company: {...data.company, email: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[13px] rounded-lg outline-none transition-all" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Email адрес</label>
+                  <input 
+                    type="text" 
+                    value={data.company.email} 
+                    onChange={(e) => setData({...data, company: {...data.company, email: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[13px] font-medium rounded-lg outline-none transition-all duration-200" 
+                  />
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Right Column */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden">
-              <div className="bg-[#f7f8f9]/50 px-4 py-2.5 border-b border-[#e3e8ee] flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <LinkIcon className="w-4 h-4 text-[#2c3b6e]" />
-                  <h2 className="text-[13px] font-bold text-[#1a1f36] uppercase tracking-wider">Структура подвала (Footer)</h2>
-                </div>
+            {/* Footer Structure Block */}
+            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+              <div className="bg-[#f7f8f9] px-4 py-3 border-b border-[#e3e8ee] flex items-center gap-2.5">
+                <LinkIcon className="w-4 h-4 text-slate-800" />
+                <h2 className="text-[11px] font-black text-[#4f566b] uppercase tracking-wider">Структура подвала (Footer)</h2>
               </div>
               <div className="p-5 space-y-6">
                 {data.footer.sections.map((section, sIdx) => (
                   <div key={sIdx} className="space-y-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded bg-[#2c3b6e] text-white flex items-center justify-center text-[9px] font-bold">{sIdx + 1}</span>
-                        <input type="text" value={section.title} onChange={(e) => { const newData = { ...data }; newData.footer.sections[sIdx].title = e.target.value; setData(newData); }} className="bg-transparent border-b border-transparent focus:border-[#2c3b6e] text-[12px] font-bold text-[#1a1f36] uppercase tracking-widest outline-none px-1" />
+                        <span className="w-5 h-5 rounded bg-slate-900 text-white flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                        <input 
+                          type="text" 
+                          value={section.title} 
+                          onChange={(e) => { const newData = { ...data }; newData.footer.sections[sIdx].title = e.target.value; setData(newData); }} 
+                          className="bg-transparent border-b border-transparent focus:border-slate-900 text-[12px] font-black text-slate-900 uppercase tracking-widest outline-none px-1 py-0.5" 
+                        />
                       </div>
-                      <button onClick={() => addLink(sIdx)} className="text-[9px] font-bold text-[#2c3b6e] uppercase tracking-widest hover:bg-[#2c3b6e]/5 px-2 py-1 rounded transition-all">+ Добавить</button>
+                      <button 
+                        onClick={() => addLink(sIdx)} 
+                        className="text-[10px] font-black text-slate-900 uppercase tracking-widest hover:bg-[#f7f8f9] px-2 py-1 rounded transition-all cursor-pointer border border-transparent hover:border-[#e3e8ee]"
+                      >
+                        + Добавить
+                      </button>
                     </div>
-                    <div className="grid grid-cols-1 gap-1.5">
+                    <div className="grid grid-cols-1 gap-2">
                       {section.links.map((link, lIdx) => (
-                        <div key={lIdx} className="flex items-center gap-2 p-1.5 bg-[#fcfcfd] border border-[#e3e8ee] group rounded-md">
-                          <div className="flex-1 grid grid-cols-2 gap-2">
-                            <input type="text" value={link.label} onChange={(e) => updateLink(sIdx, lIdx, 'label', e.target.value)} placeholder="Название" className="bg-transparent text-[12px] font-medium outline-none border-r border-[#e3e8ee] pr-2" />
-                            <select 
-                              value={link.href} 
-                              onChange={(e) => updateLink(sIdx, lIdx, 'href', e.target.value)}
-                              className="bg-transparent text-[12px] text-[#4f566b] outline-none cursor-pointer appearance-none hover:text-[#2c3b6e] transition-colors"
-                            >
-                              <option value="" disabled>Выберите страницу</option>
-                              {AVAILABLE_ROUTES.map((route) => (
-                                <option key={route.value} value={route.value}>{route.label}</option>
-                              ))}
-                            </select>
+                        <div key={lIdx} className="flex items-center gap-2.5 p-2 bg-[#fcfcfd] border border-[#e3e8ee] hover:border-slate-350 hover:bg-white hover:shadow-sm rounded-lg group transition-all duration-200">
+                          <div className="flex-1 grid grid-cols-2 gap-4">
+                            <div className="flex items-center gap-2 pr-2 border-r border-[#e3e8ee]">
+                              <input 
+                                type="text" 
+                                value={link.label} 
+                                onChange={(e) => updateLink(sIdx, lIdx, 'label', e.target.value)} 
+                                placeholder="Название ссылки" 
+                                className="bg-transparent text-[12px] font-bold text-slate-900 outline-none w-full placeholder-slate-400" 
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <select 
+                                value={link.href} 
+                                onChange={(e) => updateLink(sIdx, lIdx, 'href', e.target.value)}
+                                className="bg-transparent text-[12px] text-[#4f566b] outline-none cursor-pointer appearance-none hover:text-[#0f172a] font-medium transition-colors w-full"
+                              >
+                                <option value="" disabled>Выберите страницу</option>
+                                {AVAILABLE_ROUTES.map((route) => (
+                                  <option key={route.value} value={route.value}>{route.label}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                          <button onClick={() => setDeleteConfirm({sIdx, lIdx})} className="p-1 text-[#4f566b] hover:text-[#cd5c5c] hover:bg-[#cd5c5c]/5 rounded-md transition-all md:opacity-0 group-hover:opacity-100"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button 
+                            onClick={() => setDeleteConfirm({sIdx, lIdx})} 
+                            className="p-1.5 text-slate-400 hover:text-red-650 hover:bg-red-50 rounded-md transition-all cursor-pointer shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -408,29 +470,49 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden">
-              <div className="bg-[#f7f8f9]/50 px-4 py-2.5 border-b border-[#e3e8ee] flex items-center gap-2.5">
-                <Info className="w-4 h-4 text-[#2c3b6e]" />
-                <h2 className="text-[13px] font-bold text-[#1a1f36] uppercase tracking-wider">Юридическая информация</h2>
+            {/* Legal Block */}
+            <div className="bg-white border border-[#e3e8ee] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+              <div className="bg-[#f7f8f9] px-4 py-3 border-b border-[#e3e8ee] flex items-center gap-2.5">
+                <Info className="w-4 h-4 text-slate-800" />
+                <h2 className="text-[11px] font-black text-[#4f566b] uppercase tracking-wider">Юридическая информация</h2>
               </div>
               <div className="p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Дисклеймер (Текст внизу)</label>
-                  <textarea value={data.footer.disclaimer} onChange={(e) => setData({...data, footer: {...data.footer, disclaimer: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[12px] font-medium rounded-lg outline-none transition-all h-20 resize-none leading-relaxed" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Дисклеймер (Текст внизу)</label>
+                  <textarea 
+                    value={data.footer.disclaimer} 
+                    onChange={(e) => setData({...data, footer: {...data.footer, disclaimer: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[12px] font-medium rounded-lg outline-none transition-all h-20 resize-none leading-relaxed duration-200" 
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#a3acb9] uppercase tracking-widest px-0.5">Копирайт</label>
-                  <input type="text" value={data.footer.copyright} onChange={(e) => setData({...data, footer: {...data.footer, copyright: e.target.value}})} className="w-full px-3 py-2 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white text-[12px] font-medium rounded-lg outline-none transition-all" />
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Копирайт</label>
+                  <input 
+                    type="text" 
+                    value={data.footer.copyright} 
+                    onChange={(e) => setData({...data, footer: {...data.footer, copyright: e.target.value}})} 
+                    className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] focus:border-slate-400 focus:bg-white text-[12px] font-medium rounded-lg outline-none transition-all duration-200" 
+                  />
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Floating bottom save changes capsule */}
         <AnimatePresence>
           {hasUnsavedChanges && (
-            <motion.div initial={{ y: 100, x: "-50%" }} animate={{ y: 0, x: "-50%" }} exit={{ y: 100, x: "-50%" }} className="fixed bottom-8 left-1/2 z-50">
-              <button onClick={handleSave} disabled={saving} className="bg-[#2c3b6e] text-white px-6 py-3 rounded-full border border-[#2c3b6e] hover:bg-[#232f58] shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 font-bold text-[13px]">
+            <motion.div 
+              initial={{ y: 100, x: "-50%" }} 
+              animate={{ y: 0, x: "-50%" }} 
+              exit={{ y: 100, x: "-50%" }} 
+              className="fixed bottom-8 left-1/2 z-[999] pointer-events-auto"
+            >
+              <button 
+                onClick={handleSave} 
+                disabled={saving} 
+                className="bg-slate-900 text-white px-6 py-3 rounded-full border border-slate-900 hover:bg-slate-800 shadow-2xl transition-all flex items-center gap-2.5 font-black text-[13px] cursor-pointer"
+              >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Сохранить изменения
               </button>

@@ -47,5 +47,10 @@ export default async function ProductPage({ params }: { params: Promise<{ sku: s
 
   const recommended = await getRecommended(product.category_id, product.id);
 
-  return <ProductContent product={product} recommended={recommended} />;
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `.bg-grid-pattern { display: none !important; }` }} />
+      <ProductContent product={product} recommended={recommended} />
+    </>
+  );
 }

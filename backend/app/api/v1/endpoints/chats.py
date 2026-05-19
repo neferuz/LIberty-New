@@ -27,7 +27,7 @@ class MessageOut(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/", response_model=MessageOut)
+@router.post("", response_model=MessageOut)
 def send_message(
     msg_in: MessageCreate, 
     db: Session = Depends(get_db)

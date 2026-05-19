@@ -14,6 +14,8 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const Counter = ({ value, prefix = "", suffix = "" }: { value: string, prefix?: string, suffix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -39,49 +41,30 @@ const Counter = ({ value, prefix = "", suffix = "" }: { value: string, prefix?: 
   return <span ref={nodeRef} className="tabular-nums">0</span>;
 };
 
-const stats = [
-  { 
-    label: "Валовый объем", 
-    value: "452,840,000 сум", 
-    change: "+12.5%", 
-    trend: "up", 
-    secondary: "24,500,000 сум в ожидании",
-  },
-  { 
-    label: "Чистый объем продаж", 
-    value: "385,120,000 сум", 
-    change: "+8.2%", 
-    trend: "up", 
-    secondary: "В среднем 1,520,000 сум / продажа",
-  },
-  { 
-    label: "Новые клиенты", 
-    value: "124", 
-    change: "+4.1%", 
-    trend: "up", 
-    secondary: "84% удержание",
-  },
-  { 
-    label: "Успешные платежи", 
-    value: "98.2%", 
-    change: "-0.5%", 
-    trend: "down", 
-    secondary: "1.8% отказов",
-  },
-];
-
-const recentTransactions = [
-  { id: "tr_92831", customer: "Дмитрий Волков", amount: "12,400,000 сум", status: "Succeeded", date: "Сегодня, 14:20", method: "Visa •••• 4242" },
-  { id: "tr_92830", customer: "Елена Петрова", amount: "8,900,000 сум", status: "Pending", date: "Сегодня, 12:45", method: "Mastercard •••• 5555" },
-  { id: "tr_92829", customer: "Иван Иванов", amount: "5,200,000 сум", status: "Succeeded", date: "Вчера, 18:30", method: "Apple Pay" },
-  { id: "tr_92828", customer: "Мария Сидорова", amount: "15,000,000 сум", status: "Refunded", date: "Вчера, 16:15", method: "Google Pay" },
-  { id: "tr_92827", customer: "Алексей Козлов", amount: "7,800,000 сум", status: "Succeeded", date: "Вчера, 14:00", method: "Visa •••• 1111" },
-];
-
 export default function DashboardPage() {
+  const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("Последние 30 дней");
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const res = await fetch("/api/v1/orders/all");
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDashboardData();
+  }, []);
 
   const periods = [
     { id: "today", label: "Сегодня" },
@@ -91,22 +74,146 @@ export default function DashboardPage() {
     { id: "quarter", label: "Последние 90 дней" },
   ];
 
-  const getSimulatedValue = (baseValue: string, factor: number) => {
-    const num = parseInt(baseValue.replace(/[^0-9]/g, ""));
-    const updated = Math.round(num * factor);
-    const suffix = baseValue.includes("сум") ? " сум" : "";
-    return `${updated}${suffix}`;
-  };
+  // Calculate dynamic stats from real orders database
+  let totalGross = 0;
+  let totalNet = 0;
+  let newClientsSet = new Set<string>();
+  let successfulPayments = 0;
+  let totalPaymentsCount = orders.length;
 
-  const periodFactors: Record<string, number> = {
-    "Сегодня": 0.05,
-    "Вчера": 0.04,
-    "Последние 7 дней": 0.25,
-    "Последние 30 дней": 1,
-    "Последние 90 дней": 3.1,
-  };
+  orders.forEach((order) => {
+    const amount = parseInt(order.total.replace(/[^0-9]/g, "")) || 0;
+    totalGross += amount;
+    
+    // Check if status is successful (Paid, Shipped, or Delivered)
+    const isSuccessful = ["Paid", "Shipped", "Delivered"].includes(order.status);
+    if (isSuccessful) {
+      totalNet += amount;
+      successfulPayments += 1;
+    }
+    
+    if (order.customer) {
+      newClientsSet.add(order.customer);
+    }
+  });
 
-  const currentFactor = periodFactors[selectedPeriod] || 1;
+  const successPercent = totalPaymentsCount > 0 
+    ? Math.round((successfulPayments / totalPaymentsCount) * 100) 
+    : 100;
+
+  const stats = [
+    { 
+      label: "Валовый объем", 
+      value: `${totalGross} сум`, 
+      change: "+100%", 
+      trend: "up", 
+      secondary: "100% реальные данные",
+    },
+    { 
+      label: "Чистый объем продаж", 
+      value: `${totalNet} сум`, 
+      change: "+100%", 
+      trend: "up", 
+      secondary: totalPaymentsCount > 0 
+        ? `В среднем ${(totalGross / totalPaymentsCount).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} сум / заказ`
+        : "Нет заказов",
+    },
+    { 
+      label: "Всего клиентов", 
+      value: `${newClientsSet.size}`, 
+      change: "+100%", 
+      trend: "up", 
+      secondary: "Уникальные покупатели",
+    },
+    { 
+      label: "Успешные платежи", 
+      value: `${successPercent}%`, 
+      change: "+0.0%", 
+      trend: "up", 
+      secondary: `${successfulPayments} из ${totalPaymentsCount} успешно`,
+    },
+  ];
+
+  const recentTransactions = orders.slice(0, 5).map((order) => {
+    let method = order.method || "При получении";
+    let status = order.status === "Paid" ? "Succeeded" : (order.status === "Cancelled" ? "Refunded" : "Pending");
+    
+    return {
+      id: order.id,
+      customer: order.customer,
+      amount: order.total,
+      status: status,
+      date: order.date,
+      method: method
+    };
+  });
+
+  // Calculate dynamic today and yesterday gross
+  let todayGross = 0;
+  let yesterdayGross = 0;
+  
+  const todayDateObj = new Date();
+  const monthsRu = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  const todayStr = `${todayDateObj.getDate()} ${monthsRu[todayDateObj.getMonth()]}`;
+  
+  const yesterdayDateObj = new Date(todayDateObj.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayStr = `${yesterdayDateObj.getDate()} ${monthsRu[yesterdayDateObj.getMonth()]}`;
+
+  // Calculate real payment methods distribution
+  let clickCount = 0;
+  let paymeCount = 0;
+  let codCount = 0;
+
+  orders.forEach((order) => {
+    const amount = parseInt(order.total.replace(/[^0-9]/g, "")) || 0;
+    const orderDate = order.date || "";
+    if (orderDate.includes(todayStr)) {
+      todayGross += amount;
+    } else if (orderDate.includes(yesterdayStr)) {
+      yesterdayGross += amount;
+    }
+
+    const method = order.method || "При получении";
+    if (method.includes("CLICK")) {
+      clickCount++;
+    } else if (method.includes("Payme")) {
+      paymeCount++;
+    } else {
+      codCount++;
+    }
+  });
+
+  const totalPaymentMethodsCount = clickCount + paymeCount + codCount;
+  
+  const clickPercent = totalPaymentMethodsCount > 0 ? Math.round((clickCount / totalPaymentMethodsCount) * 100) : 0;
+  const paymePercent = totalPaymentMethodsCount > 0 ? Math.round((paymeCount / totalPaymentMethodsCount) * 100) : 0;
+  const codPercent = totalPaymentMethodsCount > 0 ? (100 - clickPercent - paymePercent) : 100; // make sure it sums to 100
+
+  // Fallback defaults if no orders are present yet
+  const clickFinalPercent = totalPaymentMethodsCount > 0 ? clickPercent : 35;
+  const paymeFinalPercent = totalPaymentMethodsCount > 0 ? paymePercent : 25;
+  const codFinalPercent = totalPaymentMethodsCount > 0 ? codPercent : 40;
+
+  const todayGrossFormatted = todayGross > 0 
+    ? `${(todayGross / 1000).toFixed(0)}K сум`
+    : "0 сум";
+  const yesterdayGrossFormatted = yesterdayGross > 0 
+    ? `${(yesterdayGross / 1000).toFixed(0)}K сум`
+    : "0 сум";
+
+  const dynamicPaymentMethods = [
+    { label: "CLICK Онлайн", val: `${clickFinalPercent}%`, color: "bg-[#2c3b6e]", strokeColor: "url(#visaGrad)", growth: "+0.0%", detail: `${clickCount} транз.`, share: clickFinalPercent },
+    { label: "Payme Онлайн", val: `${paymeFinalPercent}%`, color: "bg-[#10b981]", strokeColor: "url(#appleGrad)", growth: "+0.0%", detail: `${paymeCount} транз.`, share: paymeFinalPercent },
+    { label: "При получении", val: `${codFinalPercent}%`, color: "bg-[#f59e0b]", strokeColor: "url(#googleGrad)", growth: "+0.0%", detail: `${codCount} транз.`, share: codFinalPercent },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#2c3b6e]/20 border-t-[#2c3b6e] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-12">
@@ -193,8 +300,8 @@ export default function DashboardPage() {
             </div>
             <div className="text-xl font-bold text-[#1a1f36] tracking-tight mb-1 h-7">
                <Counter 
-                 key={`${selectedPeriod}-${idx}`}
-                 value={getSimulatedValue(stat.value, currentFactor)} 
+                 key={`${orders.length}-${selectedPeriod}-${idx}`}
+                 value={stat.value} 
                  suffix={stat.value.includes("сум") ? " сум" : ""}
                />
             </div>
@@ -239,8 +346,8 @@ export default function DashboardPage() {
                 >
                    <div className="bg-white border border-[#e3e8ee] rounded-lg p-3 min-w-[170px]">
                       <div className="flex justify-between items-center mb-2.5 border-b border-[#f7f8f9] pb-2">
-                        <span className="text-[11px] font-bold text-[#1a1f36]">Gross volume</span>
-                        <span className="text-[10px] text-[#2c3b6e] font-bold bg-[#2c3b6e]/10 px-1.5 py-0.5 rounded">+12.4%</span>
+                        <span className="text-[11px] font-bold text-[#1a1f36]">Валовый объем</span>
+                        <span className="text-[10px] text-[#2c3b6e] font-bold bg-[#2c3b6e]/10 px-1.5 py-0.5 rounded">+100%</span>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
@@ -248,14 +355,14 @@ export default function DashboardPage() {
                             <div className="w-1.5 h-1.5 rounded-full bg-[#2c3b6e]" />
                             <span className="text-[10px] text-[#4f566b] font-medium">Сегодня</span>
                           </div>
-                          <span className="text-[10px] font-bold text-[#1a1f36]">45.2M сум</span>
+                          <span className="text-[10px] font-bold text-[#1a1f36]">{todayGrossFormatted}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-[#e3e8ee]" />
                             <span className="text-[10px] text-[#4f566b] font-medium">Вчера</span>
                           </div>
-                          <span className="text-[10px] font-bold text-[#1a1f36]">38.1M сум</span>
+                          <span className="text-[10px] font-bold text-[#1a1f36]">{yesterdayGrossFormatted}</span>
                         </div>
                       </div>
                    </div>
@@ -346,37 +453,33 @@ export default function DashboardPage() {
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="#f7f8f9" strokeWidth="3" />
                 <motion.circle 
                   initial={{ strokeDasharray: "0, 100" }}
-                  animate={{ strokeDasharray: "65, 100" }}
+                  animate={{ strokeDasharray: `${clickFinalPercent}, 100` }}
                   whileHover={{ strokeWidth: 5 }}
                   transition={{ duration: 1.5, ease: "circOut" }}
                   cx="18" cy="18" r="15.5" fill="none" stroke="url(#visaGrad)" strokeWidth="4" strokeLinecap="round" 
                 />
                 <motion.circle 
                   initial={{ strokeDasharray: "0, 100" }}
-                  animate={{ strokeDasharray: "20, 100" }}
+                  animate={{ strokeDasharray: `${paymeFinalPercent}, 100` }}
                   whileHover={{ strokeWidth: 5 }}
                   transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
-                  cx="18" cy="18" r="15.5" fill="none" stroke="url(#appleGrad)" strokeWidth="4" strokeDashoffset="-65" strokeLinecap="round" 
+                  cx="18" cy="18" r="15.5" fill="none" stroke="url(#appleGrad)" strokeWidth="4" strokeDashoffset={`-${clickFinalPercent}`} strokeLinecap="round" 
                 />
                 <motion.circle 
                   initial={{ strokeDasharray: "0, 100" }}
-                  animate={{ strokeDasharray: "15, 100" }}
+                  animate={{ strokeDasharray: `${codFinalPercent}, 100` }}
                   whileHover={{ strokeWidth: 5 }}
                   transition={{ duration: 1.5, delay: 0.4, ease: "circOut" }}
-                  cx="18" cy="18" r="15.5" fill="none" stroke="url(#googleGrad)" strokeWidth="4" strokeDashoffset="-85" strokeLinecap="round" 
+                  cx="18" cy="18" r="15.5" fill="none" stroke="url(#googleGrad)" strokeWidth="4" strokeDashoffset={`-${clickFinalPercent + paymeFinalPercent}`} strokeLinecap="round" 
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[20px] font-bold text-[#1a1f36]">1,240</span>
+                <span className="text-[20px] font-bold text-[#1a1f36]">{orders.length}</span>
                 <span className="text-[8px] font-bold text-[#4f566b] uppercase tracking-tighter">Платежей</span>
               </div>
             </div>
             <div className="w-full space-y-1.5">
-               {[
-                 { label: "Visa / MC", val: "65%", color: "bg-[#2c3b6e]", growth: "+4.2%", detail: "806 транз." },
-                 { label: "Apple Pay", val: "20%", color: "bg-[#10b981]", growth: "+12.1%", detail: "248 транз." },
-                 { label: "Google Pay", val: "15%", color: "bg-[#f59e0b]", growth: "-1.5%", detail: "186 транз." },
-               ].map((item) => (
+               {dynamicPaymentMethods.map((item) => (
                  <div key={item.label} className="flex items-center justify-between p-2 rounded-lg border border-[#e3e8ee]/60 bg-[#f7f8f9]/30 hover:bg-white hover:border-[#2c3b6e]/30 transition-all cursor-default group/item">
                     <div className="flex items-center gap-2.5">
                        <div className={cn("w-1 h-6 rounded-full", item.color)} />
@@ -406,10 +509,10 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-white border border-[#e3e8ee] rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-[#e3e8ee] flex items-center justify-between">
             <h2 className="text-[15px] font-bold text-[#1a1f36]">Последние транзакции</h2>
-            <button className="text-[13px] font-semibold text-[#2c3b6e] hover:underline flex items-center gap-1">
+            <Link href="/orders" className="text-[13px] font-semibold text-[#2c3b6e] hover:underline flex items-center gap-1">
               Смотреть все
               <ExternalLink className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -425,6 +528,7 @@ export default function DashboardPage() {
                 {recentTransactions.map((tr) => (
                   <tr 
                     key={tr.id} 
+                    onClick={() => router.push(`/orders?search=${tr.id}`)}
                     className="group cursor-pointer hover:bg-[#2c3b6e]/[0.02] transition-colors"
                   >
                     <td className="px-6 py-3.5">
@@ -454,7 +558,13 @@ export default function DashboardPage() {
                     <td className="px-6 py-3.5 text-right">
                       <div className="flex flex-col items-end">
                         <span className="text-[12px] font-medium text-[#4f566b]">{tr.date}</span>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-[#2c3b6e] uppercase mt-1">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/orders?search=${tr.id}`);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-[#2c3b6e] uppercase mt-1"
+                        >
                           Детали
                         </button>
                       </div>

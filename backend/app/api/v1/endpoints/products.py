@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.db.session import get_db
@@ -439,3 +439,70 @@ async def read_product(
     }
     
     return product_dict
+
+# Background Sync Variables
+IS_SYNCING = False
+LAST_SYNC_RESULT = None
+
+async def run_sync_in_background(db: Session):
+    global IS_SYNCING, LAST_SYNC_RESULT
+    IS_SYNCING = True
+    try:
+        # 1. Fetch all products list from Bitrix
+        bitrix_prods = await bitrix_service.get_all_products()
+        if not bitrix_prods:
+            LAST_SYNC_RESULT = {
+                "status": "success",
+                "synced_count": 0,
+                "message": "No products found in Bitrix24 or failed to connect."
+            }
+            return
+        
+        from app.api.v1.endpoints.bitrix_webhooks import sync_single_product
+        
+        synced_count = 0
+        errors_count = 0
+        
+        # 2. Iterate and sync each product
+        for p in bitrix_prods:
+            try:
+                pid = int(p["ID"])
+                await sync_single_product(pid, db)
+                synced_count += 1
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Background sync error for ID {p.get('ID')}: {str(e)}")
+                errors_count += 1
+                
+        LAST_SYNC_RESULT = {
+            "status": "success",
+            "synced_count": synced_count,
+            "errors_count": errors_count,
+            "message": f"Successfully synchronized {synced_count} products from Bitrix24. Errors: {errors_count}"
+        }
+    except Exception as e:
+        LAST_SYNC_RESULT = {
+            "status": "error",
+            "message": f"Background sync failed: {str(e)}"
+        }
+    finally:
+        IS_SYNCING = False
+
+@router.post("/sync-bitrix")
+async def sync_all_products_from_bitrix(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Synchronize all products from Bitrix24 to the local database in the background"""
+    global IS_SYNCING
+    if IS_SYNCING:
+        return {"status": "running", "message": "Синхронизация уже выполняется в фоновом режиме."}
+        
+    background_tasks.add_task(run_sync_in_background, db)
+    return {"status": "started", "message": "Синхронизация каталога успешно запущена в фоновом режиме."}
+
+@router.get("/sync-status")
+def get_sync_status():
+    """Check the status and results of the background Bitrix24 catalog synchronization"""
+    global IS_SYNCING, LAST_SYNC_RESULT
+    return {
+        "syncing": IS_SYNCING,
+        "last_result": LAST_SYNC_RESULT
+    }

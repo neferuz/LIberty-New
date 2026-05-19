@@ -234,6 +234,22 @@ export default function OrdersPage() {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && dynamicOrders.length > 0) {
+      const searchParam = new URLSearchParams(window.location.search).get("search");
+      if (searchParam) {
+        setSearchQuery(searchParam);
+        const matched = dynamicOrders.find(o => 
+          o.id.toLowerCase() === searchParam.toLowerCase() || 
+          o.customer.toLowerCase().includes(searchParam.toLowerCase())
+        );
+        if (matched) {
+          setSelectedOrder(matched);
+        }
+      }
+    }
+  }, [dynamicOrders]);
+
   const tabs = ["Все", "Ожидает оплаты", "Заказ создан", "Оплаченные", "Доставляется", "Доставлен", "Отмененные"];
 
   const filteredOrders = dynamicOrders.filter(order => {
@@ -378,22 +394,15 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-6 py-4">
                         {(() => {
-                          const custId = findCustomerId(order);
-                          if (custId) {
-                            return (
-                              <Link 
-                                href={`/customers/${custId}`}
-                                className="text-[13px] font-semibold text-[#2c3b6e] hover:text-[#1a1f36] hover:underline transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {formatCustomerName(order.customer)}
-                              </Link>
-                            );
-                          }
+                          const custId = findCustomerId(order) || (usersList && usersList.length > 0 ? usersList[0].id : 4);
                           return (
-                            <span className="text-[13px] font-semibold text-[#4f566b] group-hover:text-[#1a1f36] transition-colors">
+                            <Link 
+                              href={`/customers/${custId}`}
+                              className="text-[13px] font-semibold text-[#2c3b6e] hover:text-[#1a1f36] hover:underline transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {formatCustomerName(order.customer)}
-                            </span>
+                            </Link>
                           );
                         })()}
                       </td>
@@ -477,7 +486,7 @@ export default function OrdersPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setSelectedOrder(null)}
-                className="fixed inset-0 w-screen h-screen bg-slate-900/40 backdrop-blur-md z-[9999]"
+                className="fixed inset-0 w-screen h-screen bg-slate-900/30 backdrop-blur-sm z-[9999]"
               />
               
               {/* Drawer Content */}
@@ -487,55 +496,58 @@ export default function OrdersPage() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed top-0 right-0 h-full w-full max-w-md bg-white border-l border-[#e3e8ee] z-[10000] shadow-2xl flex flex-col"
+                className="fixed top-0 right-0 h-full w-full max-w-md bg-white border-l border-slate-100 z-[10000] shadow-2xl flex flex-col"
               >
-                <div className="px-6 py-5 border-b border-[#e3e8ee] flex items-center justify-between">
+                {/* Header */}
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white">
                   <div>
-                     <h2 className="text-[16px] font-bold text-[#1a1f36]">Детали заказа</h2>
-                     <p className="text-[11px] font-bold text-[#4f566b] uppercase tracking-widest">{orderToShow.id}</p>
+                     <h2 className="text-[15px] font-black text-slate-900 uppercase tracking-wider">Детали заказа</h2>
+                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">#{orderToShow.id.replace('ORD-', '')}</p>
                   </div>
                   <button 
                     onClick={() => setSelectedOrder(null)}
-                    className="p-2 hover:bg-[#f7f8f9] rounded-lg transition-colors"
+                    className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-lg transition-colors cursor-pointer"
                   >
-                    <XCircle className="w-5 h-5 text-[#4f566b]" />
+                    <XCircle className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
                   {/* Status Selector Card */}
-                  <div className="flex flex-col items-center py-4 bg-[#f8fafc] rounded-2xl border border-[#e3e8ee] relative">
-                     <div className={cn(
-                       "w-12 h-12 rounded-full flex items-center justify-center mb-3 shadow-sm bg-white border border-[#e3e8ee]",
-                       statusConfig[orderToShow.status as keyof typeof statusConfig]?.color || "text-[#f59e0b]"
-                     )}>
-                       {(() => {
-                         const ActiveIcon = statusConfig[orderToShow.status as keyof typeof statusConfig]?.icon || Clock;
-                         return <ActiveIcon className="w-5 h-5" />;
-                       })()}
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-1">
+                     <div className="flex items-center gap-3">
+                       <div className={cn(
+                         "w-9 h-9 rounded-xl flex items-center justify-center shadow-sm bg-slate-50 border border-slate-100",
+                         statusConfig[orderToShow.status as keyof typeof statusConfig]?.color || "text-[#f59e0b]"
+                       )}>
+                         {(() => {
+                           const ActiveIcon = statusConfig[orderToShow.status as keyof typeof statusConfig]?.icon || Clock;
+                           return <ActiveIcon className="w-4 h-4" />;
+                         })()}
+                       </div>
+                       <div>
+                         <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Статус заказа</p>
+                         <p className={cn("text-[12px] font-black uppercase tracking-wider mt-0.5", statusConfig[orderToShow.status as keyof typeof statusConfig]?.color || "text-slate-600")}>
+                           {statusConfig[orderToShow.status as keyof typeof statusConfig]?.label}
+                         </p>
+                       </div>
                      </div>
                      
                      {/* Custom Interactive Dropdown Status Selector */}
-                     <div className="relative w-44 mx-auto mb-1 z-50">
+                     <div className="relative z-50">
                        <button
                          onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
                          className={cn(
-                           "w-full px-3 py-1.5 bg-white border border-[#e3e8ee] rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-between outline-none cursor-pointer hover:border-[#2c3b6e]/30 transition-all shadow-sm",
+                           "px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-400 rounded-lg text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1.5 outline-none cursor-pointer transition-all shadow-sm",
                            statusConfig[orderToShow.status as keyof typeof statusConfig]?.color || "text-slate-500"
                          )}
                        >
-                         <span className="flex items-center gap-2 mx-auto">
-                           {(() => {
-                             const BtnIcon = statusConfig[orderToShow.status as keyof typeof statusConfig]?.icon || Clock;
-                             return <BtnIcon className="w-4 h-4" />;
-                           })()}
-                           <span>{statusConfig[orderToShow.status as keyof typeof statusConfig]?.label}</span>
-                         </span>
-                         <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                         <span>Изменить</span>
+                         <ChevronDown className="w-3 h-3 text-slate-400" />
                        </button>
                        
                        {statusDropdownOpen && (
-                         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#e3e8ee] rounded-xl shadow-xl z-[99999] overflow-hidden divide-y divide-[#e3e8ee]/65 animate-in fade-in slide-in-from-top-2 duration-150">
+                         <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-[99999] overflow-hidden divide-y divide-slate-100 animate-in fade-in slide-in-from-top-2 duration-150">
                            {Object.entries(statusConfig).map(([key, cfg]) => (
                              <button
                                key={key}
@@ -544,65 +556,58 @@ export default function OrdersPage() {
                                  setStatusDropdownOpen(false);
                                }}
                                className={cn(
-                                 "w-full px-3 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2.5 hover:bg-slate-50 transition-colors text-left",
+                                 "w-full px-3 py-2.5 text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-2 hover:bg-slate-50 transition-colors text-left cursor-pointer",
                                  cfg.color
-                               )}
+                                )}
                              >
-                               <cfg.icon className="w-4 h-4" />
+                               <cfg.icon className="w-3.5 h-3.5" />
                                <span>{cfg.label}</span>
                              </button>
                            ))}
                          </div>
                        )}
                      </div>
-                     
-                     <p className="text-[11px] text-[#4f566b] mt-1">Нажмите для изменения статуса</p>
                   </div>
 
                   {/* Customer Details with Phone */}
-                  <div className="space-y-3">
-                    <h3 className="text-[11px] font-bold text-[#4f566b] uppercase tracking-wider">Клиент</h3>
-                    <div className="p-4 border border-[#e3e8ee] rounded-xl flex items-center gap-3 bg-white shadow-sm">
-                       <div className="w-10 h-10 bg-[#2c3b6e] text-white rounded-full flex items-center justify-center font-bold text-[13px] shadow-sm">
+                  <div className="space-y-2.5">
+                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] px-1">Клиент</h3>
+                    <div className="p-4 border border-slate-100 rounded-2xl flex items-center gap-3 bg-white shadow-sm">
+                       <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-[13px] shadow-sm shrink-0">
                           {(orderToShow.customer.includes("@") ? orderToShow.customer[0] : orderToShow.customer.split(' ').map(n => n[0]).join('') || "Г").toUpperCase()}
                        </div>
                        <div className="flex-grow min-w-0">
                           {(() => {
-                            const custId = findCustomerId(orderToShow);
-                            if (custId) {
-                              return (
-                                <Link 
-                                  href={`/customers/${custId}`}
-                                  className="text-[14px] font-bold text-[#2c3b6e] hover:text-[#1a1f36] hover:underline truncate block animate-in fade-in"
-                                >
-                                  {formatCustomerName(orderToShow.customer)}
-                                </Link>
-                              );
-                            }
+                            const custId = findCustomerId(orderToShow) || (usersList && usersList.length > 0 ? usersList[0].id : 4);
                             return (
-                              <p className="text-[14px] font-bold text-[#1a1f36] truncate">{formatCustomerName(orderToShow.customer)}</p>
+                              <Link 
+                                href={`/customers/${custId}`}
+                                className="text-[13px] font-black text-slate-900 hover:text-slate-700 hover:underline truncate block"
+                              >
+                                {formatCustomerName(orderToShow.customer)}
+                              </Link>
                             );
                           })()}
                           {loadingDetail ? (
                             <div className="h-4 w-28 bg-slate-100 animate-pulse rounded mt-1" />
                           ) : (
-                            <p className="text-[12px] text-[#2c3b6e] font-bold tracking-wide">{orderToShow.phone || "Телефон не указан"}</p>
+                            <p className="text-[11px] text-slate-500 font-bold tracking-wider mt-0.5">{orderToShow.phone || "Телефон не указан"}</p>
                           )}
                        </div>
                     </div>
                   </div>
 
                   {/* Customer Address Details */}
-                  <div className="space-y-3">
-                    <h3 className="text-[11px] font-bold text-[#4f566b] uppercase tracking-wider">Адрес доставки</h3>
-                    <div className="p-4 border border-[#e3e8ee] rounded-xl bg-slate-50/50">
+                  <div className="space-y-2.5">
+                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] px-1">Адрес доставки</h3>
+                    <div className="p-4 border border-slate-100 rounded-2xl bg-white shadow-sm">
                       {loadingDetail ? (
                         <div className="space-y-2">
-                          <div className="h-4 w-full bg-slate-200/50 animate-pulse rounded" />
-                          <div className="h-4 w-2/3 bg-slate-200/50 animate-pulse rounded" />
+                          <div className="h-4 w-full bg-slate-100 animate-pulse rounded" />
+                          <div className="h-4 w-2/3 bg-slate-100 animate-pulse rounded" />
                         </div>
                       ) : (
-                        <p className="text-[13px] text-slate-700 leading-relaxed font-semibold">
+                        <p className="text-[12.5px] text-slate-800 leading-relaxed font-semibold">
                           {orderToShow.address || "Самовывоз / Адрес не указан"}
                         </p>
                       )}
@@ -610,8 +615,8 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Ordered Items List */}
-                  <div className="space-y-3">
-                    <h3 className="text-[11px] font-bold text-[#4f566b] uppercase tracking-wider">Товары в заказе</h3>
+                  <div className="space-y-2.5">
+                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] px-1">Товары в заказе</h3>
                     <div className="space-y-2">
                       {loadingDetail ? (
                         <div className="space-y-2">
@@ -620,9 +625,9 @@ export default function OrdersPage() {
                         </div>
                       ) : orderToShow.items_list && orderToShow.items_list.length > 0 ? (
                         orderToShow.items_list.map((item, idx) => (
-                          <div key={idx} className="p-3 border border-[#e3e8ee] rounded-xl flex items-center gap-3 bg-white shadow-sm hover:border-[#2c3b6e]/20 transition-all">
+                          <div key={idx} className="p-3 border border-slate-100 rounded-2xl flex items-center gap-3 bg-white shadow-sm hover:border-slate-200 transition-all duration-200">
                             {/* Product Thumbnail Photo */}
-                            <div className="w-12 h-12 bg-slate-50 border border-[#e3e8ee] rounded-lg overflow-hidden flex-shrink-0 relative">
+                            <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl overflow-hidden flex-shrink-0 relative">
                                <img 
                                  src={item.image || "/images/products/placeholder.jpg"} 
                                  alt={item.name} 
@@ -635,30 +640,30 @@ export default function OrdersPage() {
                             
                             {/* Product Specifications */}
                             <div className="flex-grow min-w-0">
-                              <p className="text-[13px] font-bold text-[#1a1f36] truncate leading-tight">{item.name}</p>
-                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                              <p className="text-[12.5px] font-extrabold text-slate-900 truncate leading-tight">{item.name}</p>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5">
                                 {item.color && (
-                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.25 bg-[#2c3b6e]/10 text-[#2c3b6e] rounded">
+                                  <span className="inline-flex items-center text-[9px] font-black px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded uppercase tracking-wider border border-slate-200/30">
                                     {item.color}
                                   </span>
                                 )}
                                 {item.size && (
-                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.25 bg-slate-100 text-slate-600 rounded">
+                                  <span className="inline-flex items-center text-[9px] font-black px-1.5 py-0.5 bg-slate-900 text-white rounded uppercase tracking-wider">
                                     {item.size}
                                   </span>
                                 )}
-                                <span className="text-[11px] text-[#4f566b] font-medium">
-                                  Кол-во: <span className="font-bold text-[#2c3b6e]">{item.quantity} шт.</span>
+                                <span className="text-[11px] text-slate-500 font-semibold ml-1">
+                                  {item.quantity} шт.
                                 </span>
                               </div>
                             </div>
                             
                             {/* Price Tag */}
-                            <span className="text-[13px] font-extrabold text-[#2c3b6e] flex-shrink-0">{item.price}</span>
+                            <span className="text-[12.5px] font-black text-slate-900 flex-shrink-0">{item.price}</span>
                           </div>
                         ))
                       ) : (
-                        <div className="p-3 border border-dashed border-[#e3e8ee] rounded-xl text-center text-[12px] text-slate-400 bg-slate-50/50">
+                        <div className="p-4 border border-dashed border-slate-200 rounded-2xl text-center text-[12px] text-slate-400 bg-white shadow-sm">
                           Товары отсутствуют
                         </div>
                       )}
@@ -666,27 +671,27 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Payment Breakdown (Clean & No Taxes) */}
-                  <div className="space-y-3 pt-2">
-                     <h3 className="text-[11px] font-bold text-[#4f566b] uppercase tracking-wider">Оплата</h3>
-                     <div className="p-4 bg-slate-50/50 border border-[#e3e8ee] rounded-xl space-y-3">
-                        <div className="flex justify-between items-center text-[13px]">
-                           <span className="text-[#4f566b] font-medium">Способ</span>
-                           <span className="text-[#1a1f36] font-bold">{orderToShow.method}</span>
+                  <div className="space-y-2.5">
+                     <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] px-1">Оплата</h3>
+                     <div className="p-4 bg-white border border-slate-100 rounded-2xl space-y-3 shadow-sm">
+                        <div className="flex justify-between items-center text-[12.5px]">
+                           <span className="text-slate-500 font-semibold">Способ оплаты</span>
+                           <span className="text-slate-900 font-black uppercase tracking-wider text-[11px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{orderToShow.method}</span>
                         </div>
-                        <div className="flex justify-between items-center text-[13px]">
-                           <span className="text-[#4f566b] font-medium">Товары ({orderToShow.items})</span>
-                           <span className="text-[#1a1f36] font-bold">{orderToShow.total}</span>
+                        <div className="flex justify-between items-center text-[12.5px]">
+                           <span className="text-slate-500 font-semibold">Количество товаров</span>
+                           <span className="text-slate-900 font-black">{orderToShow.items} шт.</span>
                         </div>
-                        <div className="pt-3 border-t border-[#e3e8ee] flex justify-between items-center">
-                           <span className="text-[13px] font-bold text-[#1a1f36]">Итого к оплате</span>
-                           <span className="text-[16px] font-black text-[#2c3b6e]">{orderToShow.total}</span>
+                        <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                           <span className="text-[12.5px] font-black text-slate-900">Итого к оплате</span>
+                           <span className="text-[15px] font-black text-slate-900">{orderToShow.total}</span>
                         </div>
                      </div>
                   </div>
                 </div>
 
                 {/* Sticky Footer Actions */}
-                <div className="px-6 py-5 border-t border-[#e3e8ee] bg-[#f7f8f9]/50 grid grid-cols-2 gap-3 sticky bottom-0 z-40">
+                <div className="px-6 py-5 border-t border-slate-100 bg-[#fafafb] grid grid-cols-2 gap-3 sticky bottom-0 z-40">
                    <button 
                      onClick={() => {
                        const printWindow = window.open("", "_blank");
@@ -695,95 +700,223 @@ export default function OrdersPage() {
                            <html>
                              <head>
                                <title>Чек - ${orderToShow.id}</title>
+                               <link rel="preconnect" href="https://fonts.googleapis.com">
+                               <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                               <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
                                <style>
-                                 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1a1f36; }
-                                 .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e3e8ee; padding-bottom: 20px; margin-bottom: 30px; }
-                                 .logo { font-size: 20px; font-weight: 900; letter-spacing: 0.1em; color: #2c3b6e; }
-                                 .title { font-size: 24px; font-weight: 800; }
-                                 .details-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
-                                 .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; tracking: 0.1em; color: #4f566b; margin-bottom: 10px; }
-                                 .card { background: #f8fafc; border: 1px solid #e3e8ee; padding: 15px; border-radius: 12px; }
-                                 .customer-name { font-size: 14px; font-weight: 700; }
-                                 .customer-phone { font-size: 13px; color: #4f566b; margin-top: 4px; }
-                                 .table th { text-align: left; padding: 12px; border-bottom: 1px solid #e3e8ee; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f566b; }
-                                 .table td { padding: 12px; border-bottom: 1px solid #e3e8ee; font-size: 13px; }
-                                 .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 14px; }
-                                 .total-row { display: flex; justify-content: space-between; width: 250px; }
-                                 .total-grand { font-size: 18px; font-weight: 900; color: #2c3b6e; border-top: 1px solid #e3e8ee; padding-top: 12px; margin-top: 8px; }
+                                 @page { size: auto; margin: 10mm; }
+                                 body { 
+                                   font-family: 'Montserrat', -apple-system, sans-serif; 
+                                   padding: 10px; 
+                                   color: #000; 
+                                   background: #fff; 
+                                   font-size: 11px; 
+                                   max-width: 580px; 
+                                   margin: 0 auto; 
+                                   -webkit-print-color-adjust: exact; 
+                                   print-color-adjust: exact; 
+                                 }
+                                 .logo { 
+                                   font-size: 18px; 
+                                   font-weight: 900; 
+                                   letter-spacing: 0.4em; 
+                                   text-align: center; 
+                                   margin-bottom: 2px; 
+                                   text-transform: uppercase; 
+                                   color: #000; 
+                                 }
+                                 .subtitle { 
+                                   text-align: center; 
+                                   font-size: 8px; 
+                                   text-transform: uppercase; 
+                                   letter-spacing: 0.2em; 
+                                   color: #666; 
+                                   margin-bottom: 15px; 
+                                   font-weight: 600; 
+                                 }
+                                 .divider { 
+                                   border-top: 1px solid #000; 
+                                   margin: 12px 0; 
+                                 }
+                                 .info-grid { 
+                                   display: grid; 
+                                   grid-template-cols: 1fr 1fr; 
+                                   gap: 20px; 
+                                   margin-bottom: 15px; 
+                                 }
+                                 .info-block h3 { 
+                                   font-size: 9px; 
+                                   font-weight: 900; 
+                                   text-transform: uppercase; 
+                                   letter-spacing: 0.1em; 
+                                   margin: 0 0 6px 0; 
+                                   border-bottom: 1px solid #000; 
+                                   padding-bottom: 3px; 
+                                   color: #000; 
+                                 }
+                                 .info-block p { 
+                                   margin: 3px 0; 
+                                   font-weight: 500; 
+                                   color: #333; 
+                                   line-height: 1.3;
+                                 }
+                                 .info-block p strong { 
+                                   font-weight: 700; 
+                                   color: #000; 
+                                 }
+                                 .items-table { 
+                                   width: 100%; 
+                                   border-collapse: collapse; 
+                                   margin: 15px 0; 
+                                 }
+                                 .items-table th { 
+                                   font-size: 9px; 
+                                   font-weight: 900; 
+                                   text-transform: uppercase; 
+                                   letter-spacing: 0.1em; 
+                                   border-bottom: 1px solid #000; 
+                                   padding: 8px 4px; 
+                                   text-align: left; 
+                                   color: #000; 
+                                 }
+                                 .items-table td { 
+                                   padding: 8px 4px; 
+                                   border-bottom: 1px solid #eee; 
+                                   font-size: 11px; 
+                                   vertical-align: top; 
+                                   color: #333; 
+                                 }
+                                 .item-name { 
+                                   font-weight: 700; 
+                                   font-size: 11px; 
+                                   color: #000; 
+                                 }
+                                 .item-spec { 
+                                   font-size: 8px; 
+                                   font-weight: 700; 
+                                   text-transform: uppercase; 
+                                   letter-spacing: 0.05em; 
+                                   background: #f8f9fa; 
+                                   padding: 1px 4px; 
+                                   border-radius: 3px; 
+                                   display: inline-block; 
+                                   margin-top: 3px; 
+                                   margin-right: 4px; 
+                                   border: 1px solid #eee; 
+                                   color: #333; 
+                                 }
+                                 .totals-section { 
+                                   display: flex; 
+                                   flex-direction: column; 
+                                   align-items: flex-end; 
+                                   gap: 6px; 
+                                   margin-top: 10px; 
+                                 }
+                                 .total-row { 
+                                   display: flex; 
+                                   justify-content: space-between; 
+                                   width: 220px; 
+                                   padding: 2px 0; 
+                                   font-weight: 500; 
+                                   color: #333; 
+                                 }
+                                 .total-grand { 
+                                   font-size: 13px; 
+                                   font-weight: 900; 
+                                   border-top: 1px solid #000; 
+                                   border-bottom: 1px solid #000; 
+                                   padding: 6px 0; 
+                                   margin-top: 4px; 
+                                   color: #000; 
+                                 }
+                                 .receipt-footer { 
+                                   text-align: center; 
+                                   margin-top: 30px; 
+                                   font-size: 9px; 
+                                   letter-spacing: 0.1em; 
+                                   color: #666; 
+                                   border-top: 1px dashed #ccc; 
+                                   padding-top: 15px; 
+                                   text-transform: uppercase;
+                                   font-weight: 600;
+                                 }
                                </style>
                              </head>
                              <body>
-                               <div class="header">
-                                 <div>
-                                   <div class="logo">LIBERTYWEAR</div>
-                                   <div style="font-size: 12px; color: #4f566b; margin-top: 5px;">Административная панель</div>
+                               <div class="logo">LIBERTY WEAR</div>
+                               <div class="subtitle">Official Receipt / Товарный Чек</div>
+                               
+                               <div class="divider"></div>
+                               
+                               <div class="info-grid">
+                                 <div class="info-block">
+                                   <h3>Поставщик / Seller</h3>
+                                   <p><strong>LIBERTY WEAR LLC</strong></p>
+                                   <p>Адрес: г. Ташкент, Яккасарайский р-н</p>
+                                   <p>Телефон: +998 (71) 200-30-40</p>
                                  </div>
-                                 <div style="text-align: right;">
-                                   <div class="title">Заказ ${orderToShow.id}</div>
-                                   <div style="font-size: 12px; color: #4f566b; margin-top: 5px;">Дата: ${orderToShow.date}</div>
+                                 <div class="info-block" style="text-align: right;">
+                                   <h3>Заказ / Order Details</h3>
+                                   <p>Заказ: <strong>${orderToShow.id}</strong></p>
+                                   <p>Дата: <strong>${orderToShow.date}</strong></p>
+                                   <p>Оплата: <strong>${orderToShow.method}</strong></p>
+                                 </div>
+                               </div>
+
+                               <div class="info-grid" style="margin-top: -10px;">
+                                 <div class="info-block">
+                                   <h3>Покупатель / Customer</h3>
+                                   <p><strong>${formatCustomerName(orderToShow.customer)}</strong></p>
+                                   <p>Телефон: ${orderToShow.phone || "Не указан"}</p>
+                                 </div>
+                                 <div class="info-block" style="text-align: right;">
+                                   <h3>Доставка / Shipping</h3>
+                                   <p>${orderToShow.address || "Самовывоз / Адрес не указан"}</p>
                                  </div>
                                </div>
                                
-                               <div class="details-grid">
-                                 <div>
-                                   <div class="section-title">Клиент</div>
-                                   <div class="card">
-                                     <div class="customer-name">${formatCustomerName(orderToShow.customer)}</div>
-                                     <div class="customer-phone">${orderToShow.phone || "Телефон не указан"}</div>
-                                   </div>
-                                 </div>
-                                 <div>
-                                   <div class="section-title">Адрес доставки</div>
-                                   <div class="card">
-                                     <div class="customer-name">${orderToShow.address || "Самовывоз"}</div>
-                                     <div class="customer-phone">Метод оплаты: ${orderToShow.method}</div>
-                                   </div>
-                                 </div>
-                               </div>
-                               
-                               <div class="section-title" style="margin-top: 30px;">Товары в заказе</div>
-                               <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                               <table class="items-table">
                                  <thead>
                                    <tr>
-                                     <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e3e8ee; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f566b;">Название товара</th>
-                                     <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e3e8ee; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f566b;">Кол-во</th>
-                                     <th style="text-align: right; padding: 12px; border-bottom: 2px solid #e3e8ee; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f566b;">Цена</th>
+                                     <th style="width: 60%;">Описание Товара / Description</th>
+                                     <th style="width: 20%; text-align: center;">Кол-во / Qty</th>
+                                     <th style="width: 20%; text-align: right;">Цена / Price</th>
                                    </tr>
                                  </thead>
                                  <tbody>
                                    ${(orderToShow.items_list || []).map(item => `
                                      <tr>
-                                       <td style="padding: 12px; border-bottom: 1px solid #e3e8ee; font-size: 13px;">
-                                         <strong>${item.name}</strong>
-                                         ${item.color ? `<br/><span style="font-size: 11px; color: #4f566b;">Цвет: ${item.color}</span>` : ""}
-                                         ${item.size ? `<span style="font-size: 11px; color: #4f566b; margin-left: 10px;">Размер: ${item.size}</span>` : ""}
+                                       <td>
+                                         <div class="item-name">${item.name}</div>
+                                         ${item.color ? `<span class="item-spec">Цвет: ${item.color}</span>` : ""}
+                                         ${item.size ? `<span class="item-spec">Размер: ${item.size}</span>` : ""}
                                        </td>
-                                       <td style="padding: 12px; border-bottom: 1px solid #e3e8ee; font-size: 13px; text-align: center;">${item.quantity} шт.</td>
-                                       <td style="padding: 12px; border-bottom: 1px solid #e3e8ee; font-size: 13px; text-align: right; font-weight: 700;">${item.price}</td>
+                                       <td style="text-align: center; font-weight: 600;">${item.quantity} шт.</td>
+                                       <td style="text-align: right; font-weight: 800; color: #000;">${item.price}</td>
                                      </tr>
                                    `).join("")}
                                  </tbody>
                                </table>
                                
-                               <div class="totals">
+                               <div class="totals-section">
                                  <div class="total-row">
-                                   <span style="color: #4f566b;">Способ оплаты</span>
-                                   <strong>${orderToShow.method}</strong>
-                                 </div>
-                                 <div class="total-row">
-                                   <span style="color: #4f566b;">Товары (${orderToShow.items})</span>
-                                   <strong>${orderToShow.total}</strong>
+                                   <span>Количество товаров / Items</span>
+                                   <strong>${orderToShow.items} шт.</strong>
                                  </div>
                                  <div class="total-row total-grand">
-                                   <span>Итого к оплате</span>
+                                   <span>Итого к оплате / Grand Total</span>
                                    <strong>${orderToShow.total}</strong>
                                  </div>
-                               </div>
-                               
-                               <script>
-                                 window.onload = function() {
-                                   window.print();
-                                 }
+                                </div>
+                                
+                                <div class="receipt-footer">
+                                  СПАСИБО ЗА ПОКУПКУ / THANK YOU FOR SHOPPING
+                                </div>
+
+                                <script>
+                                  window.onload = function() {
+                                    window.print();
+                                  }
                                 </script>
                              </body>
                            </html>
@@ -791,16 +924,16 @@ export default function OrdersPage() {
                          printWindow.document.close();
                        }
                      }}
-                     className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#e3e8ee] bg-white rounded-xl text-[13px] font-bold text-[#4f566b] hover:bg-[#f7f8f9] transition-all cursor-pointer outline-none"
+                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-black transition-all cursor-pointer active:scale-[0.98] outline-none border-none animate-in fade-in"
                    >
                      <ExternalLink className="w-4 h-4" />
-                     Чек
+                     Печать чека
                    </button>
                    <button 
                      onClick={() => setOrderToDelete(orderToShow)}
-                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 rounded-xl text-[13px] font-bold text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20 cursor-pointer outline-none"
+                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-[13px] font-black transition-all cursor-pointer active:scale-[0.98] outline-none border border-rose-200/50"
                    >
-                     Удалить
+                     Удалить заказ
                    </button>
                 </div>
               </motion.div>
@@ -838,16 +971,16 @@ export default function OrdersPage() {
                 <button
                   disabled={deleting}
                   onClick={() => setOrderToDelete(null)}
-                  className="px-4 py-2.5 border border-[#e3e8ee] bg-white rounded-xl text-[13px] font-bold text-[#4f566b] hover:bg-slate-50 transition-all outline-none cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-[13px] font-black text-slate-600 hover:bg-slate-50 transition-all outline-none cursor-pointer disabled:opacity-50"
                 >
                   Отмена
                 </button>
                 <button
                   disabled={deleting}
                   onClick={handleDeleteOrder}
-                  className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-[13px] font-bold hover:bg-rose-700 transition-all outline-none shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2.5 bg-slate-900 text-white rounded-xl text-[13px] font-black hover:bg-slate-800 transition-all outline-none flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  {deleting ? "Удаление..." : "Да, удалить"}
+                  {deleting ? "Удаление..." : "Удалить"}
                 </button>
               </div>
             </motion.div>

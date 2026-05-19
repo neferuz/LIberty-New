@@ -41,7 +41,6 @@ const mainNav = [
   { icon: Zap, label: "Интеграции", href: "/integrations" },
   { icon: MessageSquare, label: "Чаты", href: "/chats" },
   { icon: Bell, label: "Заявки", href: "/inquiries" },
-  { icon: ShieldAlert, label: "Сотрудники", href: "/staff" },
   { icon: Settings, label: "Настройки", href: "/settings" },
 ];
 
@@ -140,14 +139,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className="w-64 bg-[#fafafb] border-r border-[#e2e8f0] flex flex-col sticky top-0 h-screen flex-shrink-0 z-[100]">
         <div className="px-4 py-4 border-b border-[#e2e8f0]">
            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-[14px] font-black text-white shadow-sm shrink-0">
-                LW
+              <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-[12px] font-black text-white shadow-sm shrink-0 tracking-tighter uppercase select-none notranslate" translate="no">
+                LI<span className="text-slate-400">WE</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-black leading-tight truncate text-slate-900 uppercase tracking-[0.2em] font-sans">
-                  Liberty Wear
+              <div className="flex-1 min-w-0 select-none">
+                <p className="text-[14px] font-black leading-tight truncate text-slate-900 uppercase tracking-tighter font-sans notranslate" translate="no">
+                  LIBERTY<span className="text-slate-400">WEAR</span>
                 </p>
-                <p className="text-[9px] text-slate-400 leading-none mt-1 uppercase tracking-widest font-extrabold">
+                <p className="text-[9px] text-slate-400 leading-none mt-1.5 uppercase tracking-widest font-extrabold">
                   Панель управления
                 </p>
               </div>
@@ -168,7 +167,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                     key={item.label} 
                     href={item.href} 
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group relative",
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative",
                       isActive 
                         ? "text-slate-900 bg-slate-100 border border-slate-200/50 shadow-sm" 
                         : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
@@ -204,7 +203,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <div key={section.label} className="space-y-1">
                 <button 
                   onClick={() => setIsPagesOpen(!isPagesOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-slate-500 font-semibold hover:text-slate-900 hover:bg-slate-100/50 rounded-lg transition-all duration-200 group text-left"
+                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-slate-500 font-medium hover:text-slate-900 hover:bg-slate-100/50 rounded-lg transition-all duration-200 group text-left"
                 >
                   <div className="flex items-center gap-3">
                     <section.icon className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} />
@@ -229,7 +228,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                             key={sub.label} 
                             href={sub.href} 
                             className={cn(
-                              "flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-150 relative",
+                              "flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
                               isActive 
                                 ? "text-slate-900 bg-slate-100/60 border border-slate-200/30" 
                                 : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/20"
@@ -254,7 +253,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
            <Link 
              href="/settings" 
              className={cn(
-               "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group",
+               "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group",
                pathname === "/settings" 
                  ? "text-slate-900 bg-slate-100 border border-slate-200/50" 
                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
@@ -263,9 +262,19 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <Settings className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} /> 
               Настройки
            </Link>
-           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 transition-all duration-200 group text-left">
+           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 transition-all duration-200 group text-left">
               <Code className="w-4 h-4 text-slate-400 group-hover:text-slate-900" strokeWidth={2} /> 
               Разработчикам
+           </button>
+           <button 
+             onClick={() => {
+               localStorage.removeItem("token");
+               router.push("/login");
+             }}
+             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-semibold text-red-500 hover:text-red-700 hover:bg-red-50/50 transition-all duration-200 group text-left cursor-pointer"
+           >
+              <LogOut className="w-4 h-4 text-red-400 group-hover:text-red-500 transition-colors" strokeWidth={2} /> 
+              Выйти
            </button>
         </div>
       </aside>

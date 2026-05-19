@@ -174,3 +174,24 @@ def read_user_by_id(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
 
+
+@router.delete("/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.user.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Delete a user by ID (Staff only).
+    """
+    user = db.query(models.user.User).filter(models.user.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Вы не можете удалить свою собственную учетную запись")
+        
+    db.delete(user)
+    db.commit()
+    return {"msg": "Пользователь успешно удален", "id": user_id}
+

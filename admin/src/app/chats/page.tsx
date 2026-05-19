@@ -193,7 +193,16 @@ export default function ChatsPage() {
                       {new Date(session.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tashkent' })}
                     </span>
                   </div>
-                  <p className="text-[12px] text-[#4f566b] truncate line-clamp-1">{session.last_message}</p>
+                  {session.user_email && session.user_email !== "Не авторизован" && (
+                    <div className="text-[9px] text-[#2c3b6e] font-semibold tracking-wide uppercase truncate mb-1 bg-[#2c3b6e]/5 px-1.5 py-0.5 rounded w-max max-w-full">
+                      {session.user_email}
+                    </div>
+                  )}
+                  <p className="text-[12px] text-[#4f566b] truncate line-clamp-1">
+                    {session.last_message.startsWith("[Контакты]") 
+                      ? "📥 Оставлены контакты для связи" 
+                      : session.last_message}
+                  </p>
                 </div>
               </button>
             ))}
@@ -220,8 +229,20 @@ export default function ChatsPage() {
                     {selectedSession.user_name.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-[#1a1f36] leading-none mb-1">{selectedSession.user_name}</h3>
-                    <p className="text-[11px] text-[#4f566b]">{selectedSession.user_email}</p>
+                    <h3 className="text-[14px] font-bold text-[#1a1f36] leading-none mb-1.5 flex items-center gap-2">
+                      {selectedSession.user_name}
+                      {selectedSession.user_email && selectedSession.user_email !== "Не авторизован" && (
+                        <span className="text-[9px] bg-[#2c3b6e] text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                          Клиент с формы
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-[#4f566b] flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold uppercase tracking-wider text-[#2c3b6e] text-[9px]">Контакты:</span>
+                      <span className="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
+                        {selectedSession.user_email}
+                      </span>
+                    </p>
                   </div>
                 </div>
                 <button className="p-2 text-[#4f566b] hover:bg-[#f7f8f9] rounded-lg">
@@ -239,14 +260,41 @@ export default function ChatsPage() {
                       msg.is_admin ? "ml-auto items-end" : "mr-auto items-start"
                     )}
                   >
-                    <div className={cn(
-                      "p-3.5 rounded-2xl text-[13px] leading-relaxed",
-                      msg.is_admin 
-                        ? "bg-[#2c3b6e] text-white rounded-tr-none" 
-                        : "bg-white border border-[#e3e8ee] text-[#1a1f36] rounded-tl-none shadow-none"
-                    )}>
-                      {msg.content}
-                    </div>
+                    {msg.content.startsWith("[Контакты]") ? (
+                      <div className="bg-slate-50 border border-[#e3e8ee] p-4 rounded-xl w-full space-y-2 mb-1">
+                        <div className="flex items-center justify-between border-b border-[#e3e8ee] pb-1.5 mb-1.5">
+                          <span className="text-[9px] font-black text-[#2c3b6e] uppercase tracking-widest">Контактная Информация</span>
+                          <span className="text-[9px] bg-[#2c3b6e] text-white font-bold px-2 py-0.5 rounded-full uppercase">Форма</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-y-1.5 text-[11px] leading-normal">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Имя:</span>
+                          <span className="col-span-2 font-bold text-[#1a1f36]">{msg.content.match(/Имя:\s*([^,]+)/)?.[1] || "—"}</span>
+                          
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Телефон:</span>
+                          <span className="col-span-2 font-bold text-[#1a1f36]">
+                            <a href={`tel:${msg.content.match(/Телефон:\s*([^,]+)/)?.[1]?.replace(/\s+/g, '')}`} className="hover:underline hover:text-[#2c3b6e]">
+                              {msg.content.match(/Телефон:\s*([^,]+)/)?.[1] || "—"}
+                            </a>
+                          </span>
+                          
+                          <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Email:</span>
+                          <span className="col-span-2 font-bold text-[#1a1f36]">
+                            <a href={`mailto:${msg.content.match(/Email:\s*([^,]+)/)?.[1]}`} className="hover:underline hover:text-[#2c3b6e]">
+                              {msg.content.match(/Email:\s*([^,]+)/)?.[1] || "—"}
+                            </a>
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "p-3.5 rounded-2xl text-[13px] leading-relaxed",
+                        msg.is_admin 
+                          ? "bg-[#2c3b6e] text-white rounded-tr-none" 
+                          : "bg-white border border-[#e3e8ee] text-[#1a1f36] rounded-tl-none shadow-none"
+                      )}>
+                        {msg.content}
+                      </div>
+                    )}
                     <span className="text-[10px] text-[#a3acb9] mt-1.5 px-1">
                       {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tashkent' })}
                     </span>

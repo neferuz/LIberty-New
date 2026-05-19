@@ -159,13 +159,13 @@ export const Editorial = () => {
             </motion.div>
             
             <motion.div variants={textItemVariants} className="pt-2 md:pt-4 flex flex-wrap gap-4">
-              <Link href="/shop" className="flex-1 md:flex-none">
+              <Link href={data.button1Href || "/shop"} className="flex-1 md:flex-none">
                 <Button variant="primary" className="w-full md:w-auto rounded-none px-4 md:px-12 h-10 md:h-12 text-[14px] md:text-base font-medium">
                   {data.button1}
                 </Button>
               </Link>
               {data.button2 && (
-                <Link href="/lookbook" className="flex-1 md:flex-none">
+                <Link href={data.button2Href || "/lookbook"} className="flex-1 md:flex-none">
                   <Button variant="primary" className="w-full md:w-auto rounded-none px-4 md:px-12 h-10 md:h-12 text-[14px] md:text-base font-medium bg-white text-brand-blue hover:bg-brand-blue hover:text-white border border-brand-blue shadow-none duration-300">
                     {data.button2}
                   </Button>

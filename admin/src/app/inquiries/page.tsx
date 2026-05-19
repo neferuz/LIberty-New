@@ -38,7 +38,7 @@ export default function InquiriesPage() {
 
   const fetchInquiries = async () => {
     try {
-      const res = await fetch(`/api/v1/inquiries/?t=${Date.now()}`);
+      const res = await fetch(`/api/v1/inquiries?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setInquiries(data);

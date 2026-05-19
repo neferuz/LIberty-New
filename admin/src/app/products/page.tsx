@@ -54,11 +54,94 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleBitrixSync = async () => {
+    try {
+      setSyncing(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/v1/products/sync-bitrix", {
+        method: "POST",
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+      
+      if (!res.ok) {
+        setToast({ 
+          message: "Ошибка при запуске синхронизации с Bitrix24", 
+          type: "error" 
+        });
+        setSyncing(false);
+        return;
+      }
+      
+      const initData = await res.json();
+      if (initData.status === "running") {
+        setToast({ 
+          message: "Синхронизация уже запущена и выполняется в фоновом режиме...", 
+          type: "success" 
+        });
+      } else {
+        setToast({ 
+          message: "Синхронизация успешно запущена в фоновом режиме...", 
+          type: "success" 
+        });
+      }
+
+      // Start polling for sync status every 2 seconds
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch("/api/v1/products/sync-status");
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (!statusData.syncing) {
+              clearInterval(pollInterval);
+              setSyncing(false);
+              
+              if (statusData.last_result) {
+                const result = statusData.last_result;
+                if (result.status === "success") {
+                  setToast({ 
+                    message: `Синхронизация завершена! Успешно обновлено товаров: ${result.synced_count}`, 
+                    type: "success" 
+                  });
+                  await fetchData();
+                } else {
+                  setToast({ 
+                    message: `Ошибка синхронизации: ${result.message}`, 
+                    type: "error" 
+                  });
+                }
+              } else {
+                setToast({ 
+                  message: "Синхронизация каталога завершена!", 
+                  type: "success" 
+                });
+                await fetchData();
+              }
+            }
+          }
+        } catch (pollErr) {
+          console.error("Error polling sync status:", pollErr);
+        }
+      }, 2000);
+      
+    } catch (err) {
+      console.error("Error starting sync with Bitrix24:", err);
+      setToast({ 
+        message: "Не удалось соединиться с сервером бэкенда", 
+        type: "error" 
+      });
+      setSyncing(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -197,6 +280,32 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-12 relative">
+      {/* Dynamic Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-[12px] font-black bg-white"
+            style={{
+              borderColor: toast.type === "success" ? "#e3e8ee" : "#fcd5d5",
+              color: toast.type === "success" ? "#0f172a" : "#991b1b"
+            }}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            ) : (
+              <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-900 cursor-pointer">
+              <XCircle className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -208,9 +317,13 @@ export default function ProductsPage() {
             <Download className="w-3.5 h-3.5" />
             Экспорт
           </button>
-          <button onClick={() => { setLoading(true); fetchData(); }} className="flex items-center gap-2 px-3 py-1.5 text-[13px] font-semibold text-white bg-[#2c3b6e] border border-[#2c3b6e] rounded-md hover:bg-[#232f58] transition-all">
-            <RefreshCw className="w-3.5 h-3.5" />
-            Обновить
+          <button 
+            onClick={handleBitrixSync} 
+            disabled={syncing}
+            className="flex items-center gap-2 px-3 py-1.5 text-[13px] font-black text-white bg-slate-900 border border-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+            {syncing ? "Синхронизация..." : "Обновить из Bitrix24"}
           </button>
         </div>
       </div>

@@ -4,10 +4,10 @@ import { Footer } from "@/components/layout/Footer";
 export default function ProductLoading() {
   return (
     <div className="min-h-screen bg-white">
+      <style dangerouslySetInnerHTML={{ __html: `.bg-grid-pattern { display: none !important; }` }} />
       <Header />
       
       <main className="pt-20 md:pt-32 pb-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
         <div className="container mx-auto px-6 max-w-7xl relative z-10 animate-pulse">
           {/* Breadcrumbs Skeleton */}
           <div className="h-3 w-48 bg-slate-100 rounded mb-8 md:mb-12" />

@@ -28,6 +28,9 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${evolventa.variable}`}>
       <body className="font-sans antialiased bg-white text-brand-blue selection:bg-brand-blue selection:text-white">
+        {/* Global Grid Pattern Background */}
+        <div className="fixed inset-0 bg-grid-pattern pointer-events-none z-[2]" />
+        
         {/* Hidden Google Translate element */}
         <div 
           id="google_translate_element" 

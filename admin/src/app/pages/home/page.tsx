@@ -35,11 +35,11 @@ export default function HomePageEditor() {
   const [heroSlides, setHeroSlides] = useState<any[]>([]);
   const [categoriesSection, setCategoriesSection] = useState({ title: "", description: "" });
   const [newArrivalsSection, setNewArrivalsSection] = useState({ title: "", description: "" });
-  const [editorialSection, setEditorialSection] = useState({ overline: "", title1: "", title2: "", description: "", button1: "", button2: "", imageUrl: "" });
+  const [editorialSection, setEditorialSection] = useState({ overline: "", title1: "", title2: "", description: "", button1: "", button2: "", imageUrl: "", button1Href: "", button2Href: "" });
   const [newsletterSection, setNewsletterSection] = useState({ title: "", description: "" });
   const [pressSection, setPressSection] = useState({ title: "", description: "", brands: [] as string[] });
 
-  const tabs = ["Hero Секция", "Категории", "Новинки", "О бренде", "Рассылка", "Пресса"];
+  const tabs = ["Hero Секция", "Категории", "Новинки", "Эдиториал Образ", "Рассылка", "Пресса"];
 
   useEffect(() => {
     fetchData();
@@ -54,7 +54,19 @@ export default function HomePageEditor() {
         if (data.hero?.slides) setHeroSlides(data.hero.slides);
         if (data.categories) setCategoriesSection(data.categories);
         if (data.newArrivals) setNewArrivalsSection(data.newArrivals);
-        if (data.editorial) setEditorialSection(data.editorial);
+        if (data.editorial) {
+          setEditorialSection({
+            overline: data.editorial.overline || "",
+            title1: data.editorial.title1 || "",
+            title2: data.editorial.title2 || "",
+            description: data.editorial.description || "",
+            button1: data.editorial.button1 || "",
+            button2: data.editorial.button2 || "",
+            imageUrl: data.editorial.imageUrl || "",
+            button1Href: data.editorial.button1Href || "/shop",
+            button2Href: data.editorial.button2Href || "/lookbook"
+          });
+        }
         if (data.newsletter) setNewsletterSection(data.newsletter);
         if (data.press) setPressSection(data.press);
         setHasChanges(false);
@@ -127,7 +139,7 @@ export default function HomePageEditor() {
       reader.onloadend = () => {
         if (activeTab === "Hero Секция") {
             updateSlide("imageUrl", reader.result as string);
-        } else if (activeTab === "О бренде") {
+        } else if (activeTab === "Эдиториал Образ") {
             setEditorialSection({ ...editorialSection, imageUrl: reader.result as string });
             setHasChanges(true);
         }
@@ -149,41 +161,46 @@ export default function HomePageEditor() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1f36] tracking-tight mb-1">Контент Главной</h1>
-          <p className="text-[14px] text-[#4f566b]">Управление визуалом и текстами вашего магазина в реальном времени.</p>
+          <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5">Контент Главной</h1>
+          <p className="text-[13px] text-[#4f566b]">Управление визуалом и текстами вашего магазина в реальном времени.</p>
         </div>
         <div className="flex items-center gap-2">
-           <button 
-             onClick={handleSave}
-             disabled={loading || !hasChanges}
-             className="flex items-center gap-2 px-6 py-2 text-[13px] font-semibold text-white bg-[#2c3b6e] border border-[#2c3b6e] rounded-md hover:bg-[#232f58] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-           >
-              {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Сохранить изменения
-           </button>
+          <button 
+            onClick={handleSave}
+            disabled={loading || !hasChanges}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-[12px] font-semibold rounded-lg transition-all border shadow-sm cursor-pointer",
+              hasChanges 
+                ? "text-white bg-slate-900 border-slate-900 hover:bg-slate-800" 
+                : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
+            )}
+          >
+            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Сохранить
+          </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-6 overflow-x-auto w-full scrollbar-hide border-b border-[#e3e8ee]">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "pb-3 text-[14px] font-semibold transition-all relative whitespace-nowrap",
-                activeTab === tab ? "text-[#2c3b6e]" : "text-[#4f566b] hover:text-[#1a1f36]"
-              )}
-            >
-              {tab}
-              {activeTab === tab && (
-                <motion.div 
-                  layoutId="activeTabHome"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2c3b6e]"
-                />
-              )}
-            </button>
-          ))}
+      <div className="flex items-center gap-6 overflow-x-auto w-full scrollbar-hide border-b border-[#e3e8ee] mb-6">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "pb-3 text-[13px] font-black transition-all relative whitespace-nowrap cursor-pointer",
+              activeTab === tab ? "text-slate-900" : "text-slate-400 hover:text-slate-900"
+            )}
+          >
+            {tab}
+            {activeTab === tab && (
+              <motion.div 
+                layoutId="activeTabHome"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900"
+              />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -280,30 +297,62 @@ export default function HomePageEditor() {
           </div>
         )}
 
-        {activeTab === "О бренде" && (
+        {activeTab === "Эдиториал Образ" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
              <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Текстовый контент</label>
-                <input placeholder="Надзаголовок" value={editorialSection.overline} onChange={(e) => { setEditorialSection({ ...editorialSection, overline: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
+                <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Текстовый контент</label>
+                <input placeholder="Надзаголовок (например, Эдиториал Образ)" value={editorialSection.overline} onChange={(e) => { setEditorialSection({ ...editorialSection, overline: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Заголовок 1" value={editorialSection.title1} onChange={(e) => { setEditorialSection({ ...editorialSection, title1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                  <input placeholder="Заголовок 2" value={editorialSection.title2} onChange={(e) => { setEditorialSection({ ...editorialSection, title2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
+                  <input placeholder="Заголовок 1 (например, Искусство)" value={editorialSection.title1} onChange={(e) => { setEditorialSection({ ...editorialSection, title1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                  <input placeholder="Заголовок 2 (например, Простоты)" value={editorialSection.title2} onChange={(e) => { setEditorialSection({ ...editorialSection, title2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
                 </div>
-                <textarea rows={4} placeholder="Описание" value={editorialSection.description} onChange={(e) => { setEditorialSection({ ...editorialSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none resize-none" />
+                <textarea rows={4} placeholder="Описание" value={editorialSection.description} onChange={(e) => { setEditorialSection({ ...editorialSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none resize-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Кнопка 1" value={editorialSection.button1} onChange={(e) => { setEditorialSection({ ...editorialSection, button1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                  <input placeholder="Кнопка 2" value={editorialSection.button2} onChange={(e) => { setEditorialSection({ ...editorialSection, button2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Кнопка 1</label>
+                    <input placeholder="Текст (например, В магазин)" value={editorialSection.button1} onChange={(e) => { setEditorialSection({ ...editorialSection, button1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                    <input placeholder="Ссылка (например, /shop)" value={editorialSection.button1Href} onChange={(e) => { setEditorialSection({ ...editorialSection, button1Href: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Кнопка 2</label>
+                    <input placeholder="Текст (например, Лукбук)" value={editorialSection.button2} onChange={(e) => { setEditorialSection({ ...editorialSection, button2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                    <input placeholder="Ссылка (например, /lookbook)" value={editorialSection.button2Href} onChange={(e) => { setEditorialSection({ ...editorialSection, button2Href: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                  </div>
                 </div>
              </div>
              <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Изображение Эдиториал</label>
+                <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest">Изображение Эдиториал</label>
                 <div onClick={() => fileInputRef.current?.click()} className="relative aspect-[4/5] bg-[#f7f8f9] border-2 border-dashed border-[#e3e8ee] rounded-xl overflow-hidden cursor-pointer flex items-center justify-center group">
                   {editorialSection.imageUrl ? <img src={editorialSection.imageUrl} alt="" className="w-full h-full object-cover" /> : <Plus className="w-6 h-6 text-slate-300" />}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
                     <span className="px-4 py-2 bg-white rounded-lg text-[11px] font-bold text-[#1a1f36]">Изменить</span>
                   </div>
                 </div>
-                <input placeholder="Прямая ссылка" value={editorialSection.imageUrl} onChange={(e) => { setEditorialSection({ ...editorialSection, imageUrl: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none mt-2" />
+                <input placeholder="Прямая ссылка на изображение" value={editorialSection.imageUrl} onChange={(e) => { setEditorialSection({ ...editorialSection, imageUrl: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
+                
+                {/* Presets Grid */}
+                <div className="space-y-2 pt-2">
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest">Все фото коллекции (Кликните для выбора)</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2040&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1974&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=2070&auto=format&fit=crop"
+                    ].map((presetUrl, pIdx) => (
+                      <div 
+                        key={pIdx} 
+                        onClick={() => { setEditorialSection({ ...editorialSection, imageUrl: presetUrl }); setHasChanges(true); }}
+                        className={cn(
+                          "relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105",
+                          editorialSection.imageUrl === presetUrl ? "border-slate-900 shadow-md scale-105" : "border-transparent opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <img src={presetUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
              </div>
           </div>
         )}
