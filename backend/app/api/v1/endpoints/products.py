@@ -482,14 +482,24 @@ async def read_product(
                             if img not in variants_map[color]["images"]:
                                 variants_map[color]["images"].append(img)
                                 
-                    variants = list(variants_map.values())
-                    
                     # Collect all unique sizes from the variants dynamically
                     dynamic_sizes = []
                     for v in variants_map.values():
                         for sz in v["sizes"]:
                             if sz and sz not in dynamic_sizes:
                                 dynamic_sizes.append(sz)
+                                
+                    # Clean adult letter sizes if children's numeric sizes are present
+                    has_numeric_sizes = any(sz.isdigit() for sz in dynamic_sizes)
+                    if has_numeric_sizes:
+                        letter_sizes = {"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"}
+                        dynamic_sizes = [sz for sz in dynamic_sizes if sz not in letter_sizes]
+                        
+                        # Apply filtering to each individual variant's size list
+                        for v in variants_map.values():
+                            v["sizes"] = [sz for sz in v["sizes"] if sz not in letter_sizes]
+
+                    variants = list(variants_map.values())
                     if dynamic_sizes:
                         sizes = ", ".join(dynamic_sizes)
         except Exception as e:

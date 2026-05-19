@@ -169,6 +169,12 @@ async def sync_single_product(product_id: int, db: Session, category_map: dict =
             else:
                 composition = char_text_cleaned
 
+        # Clean adult letter sizes if children's numeric sizes are present
+        has_numeric_sizes = any(sz.isdigit() for sz in offer_sizes)
+        if has_numeric_sizes:
+            letter_sizes = {"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"}
+            offer_sizes = [sz for sz in offer_sizes if sz not in letter_sizes]
+
         sizes_str = ", ".join(offer_sizes) if offer_sizes else None
 
         product = db.query(Product).filter(Product.bitrix_id == bitrix_id).first()
