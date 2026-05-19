@@ -6,8 +6,13 @@ from app import crud, schemas
 from app.db.session import get_db
 
 from app.services.bitrix import bitrix_service
+import time
 
 router = APIRouter()
+
+# Global cache to speed up dynamic product details retrieval
+PRODUCT_CACHE = {} # key -> (timestamp, data_dict)
+CACHE_TTL = 900 # 15 minutes TTL
 
 @router.get("/categories")
 async def get_categories(db: Session = Depends(get_db)):
@@ -227,6 +232,14 @@ async def read_product(
     """
     Get product by ID or SKU, dynamically enriched with Bitrix24 variants and characteristics.
     """
+    # Check cache first
+    now = time.time()
+    cache_key = str(id_or_sku).strip().lower()
+    if cache_key in PRODUCT_CACHE:
+        cached_time, cached_data = PRODUCT_CACHE[cache_key]
+        if now - cached_time < CACHE_TTL:
+            return cached_data
+
     from app.models.product import Product
     
     product = None
@@ -527,6 +540,16 @@ async def read_product(
         "created_at": product.created_at,
         "updated_at": product.updated_at
     }
+    
+    # Save to cache
+    now = time.time()
+    cache_entry = (now, product_dict)
+    if product_dict["id"]:
+        PRODUCT_CACHE[str(product_dict["id"]).strip().lower()] = cache_entry
+    if product_dict["sku"]:
+        PRODUCT_CACHE[str(product_dict["sku"]).strip().lower()] = cache_entry
+    # Cache under the originally requested key
+    PRODUCT_CACHE[cache_key] = cache_entry
     
     return product_dict
 
