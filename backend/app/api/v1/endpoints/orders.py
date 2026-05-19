@@ -294,7 +294,9 @@ async def create_deal_on_cart(
     opportunity = sum(item.price * item.quantity for item in order_in.items)
     
     import datetime
-    now = datetime.datetime.now()
+    from datetime import timezone, timedelta
+    tashkent_tz = timezone(timedelta(hours=5))
+    now = datetime.datetime.now(tashkent_tz)
     months = ["", "янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
     date_formatted = f"{now.day} {months[now.month]}, {now.strftime('%H:%M')}"
     items_count = sum(item.quantity for item in order_in.items)
