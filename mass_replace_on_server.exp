@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 120
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "grep -r 'localhost:8000' /root/liberty-wear/frontend/src /root/liberty-wear/admin/src -l | xargs sed -i 's/localhost:8000/localhost:8002/g'"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

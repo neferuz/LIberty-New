@@ -64,20 +64,35 @@ class BitrixService:
         """Check if contact exists in Bitrix24 using email or phone"""
         if not email and not phone:
             return None
-        
-        filter_params = {}
-        if email:
-            filter_params["EMAIL"] = email
-        if phone:
-            filter_params["PHONE"] = phone
             
-        result = await self._call("crm.contact.list", {
-            "filter": filter_params,
-            "select": ["ID", "NAME", "LAST_NAME", "EMAIL", "PHONE"]
-        })
-        
-        if result and isinstance(result, list) and len(result) > 0:
-            return result[0]
+        if email:
+            result = await self._call("crm.contact.list", {
+                "filter": {"EMAIL": email},
+                "select": ["ID", "NAME", "LAST_NAME", "EMAIL", "PHONE"]
+            })
+            if result and isinstance(result, list) and len(result) > 0:
+                return result[0]
+                
+        if phone:
+            # Try with original format first
+            result = await self._call("crm.contact.list", {
+                "filter": {"PHONE": phone},
+                "select": ["ID", "NAME", "LAST_NAME", "EMAIL", "PHONE"]
+            })
+            if result and isinstance(result, list) and len(result) > 0:
+                return result[0]
+                
+            # If phone starts with +998 or 998, try alternate format too
+            clean_phone = phone.replace("+", "")
+            if clean_phone.startswith("998"):
+                alt_phone = f"+{clean_phone}" if not phone.startswith("+") else clean_phone[1:]
+                result = await self._call("crm.contact.list", {
+                    "filter": {"PHONE": alt_phone},
+                    "select": ["ID", "NAME", "LAST_NAME", "EMAIL", "PHONE"]
+                })
+                if result and isinstance(result, list) and len(result) > 0:
+                    return result[0]
+                    
         return None
 
     async def create_contact(self, contact_data: Dict[str, Any]) -> Optional[int]:
@@ -118,11 +133,49 @@ class BitrixService:
             "rows": products
         })
 
+    async def add_deal_activity(self, deal_id: int, subject: str, description: str):
+        """Add activity to deal so that it instantly shows up in the Activity view"""
+        import datetime
+        deadline_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
+        await self._call("crm.activity.todo.add", {
+            "ownerTypeId": 2, # 2 is Deal
+            "ownerId": deal_id,
+            "deadline": deadline_str,
+            "title": subject,
+            "description": description
+        })
+
     async def update_deal_stage(self, deal_id: int, stage_id: str):
         """Update deal stage (e.g. to 'Paid')"""
         await self._call("crm.deal.update", {
             "id": deal_id,
             "fields": {"STAGE_ID": stage_id}
+        })
+
+    async def update_deal_payment_info(self, deal_id: int, stage_id: str, title_tag: str, comment_tag: str):
+        """Update deal stage, title, and comments with payment details"""
+        existing = await self._call("crm.deal.get", {"id": deal_id})
+        current_title = ""
+        current_comments = ""
+        if isinstance(existing, dict) and "TITLE" in existing:
+            current_title = existing["TITLE"]
+            current_comments = existing.get("COMMENTS", "") or ""
+        
+        # Clean existing tags to avoid duplicates
+        clean_title = current_title
+        for tag in ["[Оплачено через CLICK]", "[Оплачено через Payme]", "[Наличными при получении]"]:
+            clean_title = clean_title.replace(tag, "").strip()
+            
+        new_title = f"{clean_title} {title_tag}".strip()
+        new_comments = f"{current_comments}\n\n[Информация об оплате]: {comment_tag}".strip()
+        
+        await self._call("crm.deal.update", {
+            "id": deal_id,
+            "fields": {
+                "STAGE_ID": stage_id,
+                "TITLE": new_title,
+                "COMMENTS": new_comments
+            }
         })
 
     async def get_contact_deals(self, contact_id: int) -> List[Dict[str, Any]]:

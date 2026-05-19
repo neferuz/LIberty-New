@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 120
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "pm2 logs liberty-frontend --lines 50"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 120
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "pm2 list && curl -I http://localhost:8001/api/v1/pages/home"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

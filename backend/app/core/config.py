@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "SUPER_SECRET_KEY_FOR_JWT_TOKEN_GEN_CHANGE_IN_PROD"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
+    # Payme Keys
+    PAYME_MERCHANT_ID: str = "69454dd1656e7b8e815da033"
+    PAYME_TEST_KEY: str = "P4@SxSpUsn4o@9xTAyoqUG3&FDwSHQe4Gbip"
+    PAYME_KEY: str = "@7wuy2MpOQc&YXhUYiwbHnwARtzJTUohtkxh"
+
     class Config:
         case_sensitive = True
         env_file = ".env"

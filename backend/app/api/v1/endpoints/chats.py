@@ -69,10 +69,40 @@ def list_active_chats(db: Session = Depends(get_db)):
             ChatMessage.is_admin == False
         ).first()
         
+        # Look for the guest contact details message in this session
+        contact_msg = db.query(ChatMessage).filter(
+            ChatMessage.session_id == sess_id,
+            ChatMessage.content.like("[Контакты]%")
+        ).first()
+        
         user_name = "Гость"
         user_email = "Не авторизован"
         
-        if customer_msg:
+        if contact_msg:
+            try:
+                content = contact_msg.content
+                import re
+                name_match = re.search(r"Имя:\s*([^,]+)", content)
+                phone_match = re.search(r"Телефон:\s*([^,]+)", content)
+                email_match = re.search(r"Email:\s*([^,]+)", content)
+                
+                parsed_name = name_match.group(1).strip() if name_match else ""
+                parsed_phone = phone_match.group(1).strip() if phone_match else ""
+                parsed_email = email_match.group(1).strip() if email_match else ""
+                
+                if parsed_name:
+                    user_name = parsed_name
+                
+                email_parts = []
+                if parsed_email:
+                    email_parts.append(parsed_email)
+                if parsed_phone:
+                    email_parts.append(parsed_phone)
+                if email_parts:
+                    user_email = " | ".join(email_parts)
+            except Exception:
+                pass
+        elif customer_msg:
             user = db.query(User).filter(User.id == customer_msg.sender_id).first()
             if user:
                 user_name = user.full_name

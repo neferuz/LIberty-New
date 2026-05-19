@@ -1,5 +1,132 @@
 [
   {
+    "id": "ORD-1157",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 06:43",
+    "total": "90 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Свитшот“Classic Navy”",
+        "quantity": 1,
+        "price": "90 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/9dc/9dca9a683d58573f5456eba9a4168865/1-no-bg-preview _carve.photos_ _34_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "Payme Онлайн"
+  },
+  {
+    "id": "ORD-1155",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 05:58",
+    "total": "130 000 сум",
+    "status": "Shipped",
+    "items": 2,
+    "items_list": [
+      {
+        "name": "Майка “Sport Contrast Navy”",
+        "quantity": 1,
+        "price": "40 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/d39/d39e232d03307abbbf67d6c22a64950d/1-no-bg-preview _carve.photos_ _27_.png",
+        "color": "Темно-синий"
+      },
+      {
+        "name": "Свитшот“Classic Navy”",
+        "quantity": 1,
+        "price": "90 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/9dc/9dca9a683d58573f5456eba9a4168865/1-no-bg-preview _carve.photos_ _34_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "При получении"
+  },
+  {
+    "id": "ORD-1153",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 05:52",
+    "total": "40 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Майка “Sport Contrast Navy”",
+        "quantity": 1,
+        "price": "40 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/d39/d39e232d03307abbbf67d6c22a64950d/1-no-bg-preview _carve.photos_ _27_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "CLICK Онлайн"
+  },
+  {
+    "id": "ORD-1151",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 05:45",
+    "total": "40 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Майка “Sport Contrast Navy”",
+        "quantity": 1,
+        "price": "40 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/d39/d39e232d03307abbbf67d6c22a64950d/1-no-bg-preview _carve.photos_ _27_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "CLICK Онлайн"
+  },
+  {
+    "id": "ORD-1149",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 05:41",
+    "total": "40 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Майка “Sport Contrast Navy”",
+        "quantity": 1,
+        "price": "40 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/d39/d39e232d03307abbbf67d6c22a64950d/1-no-bg-preview _carve.photos_ _27_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "CLICK Онлайн"
+  },
+  {
+    "id": "ORD-1147",
+    "customer": "notferuz",
+    "phone": "+998 90 565 34 44",
+    "address": "карасу 1 23 3: Узбекистан, Ташкент, 23 улица дом 3, кв. 23, 100001",
+    "date": "19 май, 05:41",
+    "total": "90 000 сум",
+    "status": "Pending",
+    "items": 1,
+    "items_list": [
+      {
+        "name": "Свитшот“Classic Navy”",
+        "quantity": 1,
+        "price": "90 000 сум",
+        "image": "https://cdn-ru.bitrix24.uz/b36504928/iblock/9dc/9dca9a683d58573f5456eba9a4168865/1-no-bg-preview _carve.photos_ _34_.png",
+        "color": "Темно-синий"
+      }
+    ],
+    "method": "При получении"
+  },
+  {
     "id": "ORD-1125",
     "customer": "notferuz",
     "phone": "+998 90 565 34 44",
@@ -46,7 +173,7 @@
     "address": "г. Ташкент, ул. Ойбек, д. 14, кв. 22",
     "date": "2026-05-18 04:36",
     "total": "90 000 сум",
-    "status": "Pending",
+    "status": "Paid",
     "items": 1,
     "items_list": [
       {
@@ -60,6 +187,6 @@
         "category": "Мужские свитшоты"
       }
     ],
-    "method": "Курьерская доставка"
+    "method": "CLICK Онлайн"
   }
 ]

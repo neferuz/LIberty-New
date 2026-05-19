@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 300
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

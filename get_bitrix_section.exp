@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 120
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "curl -s -X POST https://yustex.bitrix24.uz/rest/11/6kuit00wrbcyega9/crm.productsection.get -d 'id=29'"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

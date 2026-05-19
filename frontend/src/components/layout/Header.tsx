@@ -62,17 +62,48 @@ export const Header = () => {
   const toggleLanguage = () => {
     const newLang = currentLang === "RU" ? "UZ" : "RU";
     
+    const deleteCookie = (name: string) => {
+      const host = window.location.hostname;
+      // Simple path deletion
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      
+      // Traverse all possible subdomain levels to ensure total deletion
+      const parts = host.split('.');
+      while (parts.length > 0) {
+        const domainStr = parts.join('.');
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domainStr};`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domainStr};`;
+        parts.shift();
+      }
+    };
+
     const setCookie = (name: string, value: string) => {
-      const domain = window.location.hostname;
-      document.cookie = `${name}=${value}; path=/;`;
-      document.cookie = `${name}=${value}; path=/; domain=.${domain};`;
-      document.cookie = `${name}=${value}; path=/; domain=${domain};`;
+      const host = window.location.hostname;
+      
+      // Delete any duplicates first to prevent mixed domains
+      deleteCookie(name);
+      
+      if (host === "localhost" || host === "127.0.0.1") {
+        document.cookie = `${name}=${value}; path=/;`;
+      } else {
+        // Set cookie on all subdomain levels to ensure Google Translate reads it correctly
+        document.cookie = `${name}=${value}; path=/;`;
+        const parts = host.split('.');
+        while (parts.length > 0) {
+          const domainStr = parts.join('.');
+          document.cookie = `${name}=${value}; path=/; domain=.${domainStr};`;
+          document.cookie = `${name}=${value}; path=/; domain=${domainStr};`;
+          parts.shift();
+        }
+      }
     };
 
     if (newLang === "UZ") {
       setCookie("googtrans", "/ru/uz");
     } else {
+      // Force Russian explicitly to override and then perform clean deletion
       setCookie("googtrans", "/ru/ru");
+      deleteCookie("googtrans");
     }
 
     setCurrentLang(newLang);

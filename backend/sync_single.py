@@ -56,4 +56,4 @@ async def sync_single_product(bitrix_id: int):
         db.close()
 
 if __name__ == "__main__":
-    asyncio.run(sync_single_product(711))
+    asyncio.run(sync_single_product(699))

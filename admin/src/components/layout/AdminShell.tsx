@@ -54,7 +54,10 @@ const pageSections = [
       { label: "Главная", href: "/pages/home" },
       { label: "FAQ", href: "/pages/faq" },
       { label: "О нас", href: "/pages/about" },
-      { label: "Контакты", href: "/pages/contact" }
+      { label: "Контакты", href: "/pages/contact" },
+      { label: "Доставка", href: "/pages/delivery" },
+      { label: "Политика", href: "/pages/privacy" },
+      { label: "Условия", href: "/pages/terms" }
     ]
   },
 ];

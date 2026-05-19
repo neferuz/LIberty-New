@@ -28,6 +28,102 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Helper validations
+  const isEmailValid = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
+  const isPhoneValid = (phone: string) => {
+    const clean = phone.replace(/[^0-9]/g, "");
+    return clean.length === 12 && clean.startsWith("998");
+  };
+
+  const isStep1Valid = () => {
+    const val = inputValue.trim();
+    if (!val) return false;
+    
+    if (method === "email") {
+      if (!isEmailValid(val)) return false;
+    } else {
+      if (!isPhoneValid(val)) return false;
+    }
+
+    if (!password || password.length < 8) return false;
+
+    if (mode === "register") {
+      if (password !== confirmPassword) return false;
+    }
+
+    return true;
+  };
+
+  const isStep2Valid = () => {
+    if (!firstName.trim()) return false;
+    if (!lastName.trim()) return false;
+    if (!isPhoneValid(registerPhone)) return false;
+    return true;
+  };
+
+  // Phone input formatting masks (+998 XX XXX XX XX)
+  const handlePhoneInputChange = (val: string) => {
+    setValidationError("");
+    if (!val.startsWith("+998")) {
+      setInputValue("+998 ");
+      return;
+    }
+    const digitsAfterCode = val.slice(5).replace(/[^0-9]/g, "");
+    if (digitsAfterCode.length > 9) return;
+    
+    let formatted = "+998 ";
+    if (digitsAfterCode.length > 0) {
+      formatted += digitsAfterCode.slice(0, 2);
+    }
+    if (digitsAfterCode.length > 2) {
+      formatted += " " + digitsAfterCode.slice(2, 5);
+    }
+    if (digitsAfterCode.length > 5) {
+      formatted += " " + digitsAfterCode.slice(5, 7);
+    }
+    if (digitsAfterCode.length > 7) {
+      formatted += " " + digitsAfterCode.slice(7, 9);
+    }
+    setInputValue(formatted);
+  };
+
+  const handleRegisterPhoneChange = (val: string) => {
+    setValidationError("");
+    if (!val.startsWith("+998")) {
+      setRegisterPhone("+998 ");
+      return;
+    }
+    const digitsAfterCode = val.slice(5).replace(/[^0-9]/g, "");
+    if (digitsAfterCode.length > 9) return;
+    
+    let formatted = "+998 ";
+    if (digitsAfterCode.length > 0) {
+      formatted += digitsAfterCode.slice(0, 2);
+    }
+    if (digitsAfterCode.length > 2) {
+      formatted += " " + digitsAfterCode.slice(2, 5);
+    }
+    if (digitsAfterCode.length > 5) {
+      formatted += " " + digitsAfterCode.slice(5, 7);
+    }
+    if (digitsAfterCode.length > 7) {
+      formatted += " " + digitsAfterCode.slice(7, 9);
+    }
+    setRegisterPhone(formatted);
+  };
+
+  const handleInputChange = (val: string) => {
+    setValidationError("");
+    if (method === "phone") {
+      handlePhoneInputChange(val);
+    } else {
+      setInputValue(val);
+    }
+  };
+
   // Redirect to profile immediately if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -40,23 +136,7 @@ export default function AuthPage() {
     e.preventDefault();
     setValidationError("");
 
-    if (!inputValue) {
-      setValidationError(method === "email" ? "Введите почту" : "Введите номер телефона");
-      return;
-    }
-
-    if (!password) {
-      setValidationError("Введите пароль");
-      return;
-    }
-
-    if (password.length < 6) {
-      setValidationError("Пароль должен содержать не менее 6 символов");
-      return;
-    }
-
-    if (mode === "register" && password !== confirmPassword) {
-      setValidationError("Пароли не совпадают");
+    if (!isStep1Valid()) {
       return;
     }
 
@@ -119,18 +199,7 @@ export default function AuthPage() {
     e.preventDefault();
     setValidationError("");
 
-    if (!firstName.trim()) {
-      setValidationError("Введите имя");
-      return;
-    }
-
-    if (!lastName.trim()) {
-      setValidationError("Введите фамилию");
-      return;
-    }
-
-    if (!registerPhone.trim() || registerPhone.trim() === "+998") {
-      setValidationError("Введите номер телефона");
+    if (!isStep2Valid()) {
       return;
     }
 
@@ -142,7 +211,7 @@ export default function AuthPage() {
         ? cleanInput 
         : cleanInput.replace(/[^0-9+]/g, "") + "@liberty-wear.uz";
       
-      const phoneToSend = registerPhone.trim();
+      const phoneToSend = registerPhone.replace(/[^0-9+]/g, "");
       const fullNameToSend = `${firstName.trim()} ${lastName.trim()}`;
 
       // Register contact on backend
@@ -246,10 +315,20 @@ export default function AuthPage() {
                     <input 
                       type={method === "email" ? "email" : "text"}
                       value={inputValue}
-                      onChange={(e) => { setInputValue(e.target.value); setValidationError(""); }}
-                      placeholder={method === "email" ? "EMAIL@EXAMPLE.COM" : "+998 -- --- -- --"}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      placeholder={method === "email" ? "EMAIL@EXAMPLE.COM" : "+998 90 123 45 67"}
                       className="w-full bg-transparent border-b border-slate-200 py-3 pl-8 text-xs md:text-sm font-semibold text-brand-blue tracking-normal focus:outline-none focus:border-brand-blue transition-colors placeholder:text-slate-300 placeholder:uppercase placeholder:tracking-widest"
                     />
+                    {inputValue && method === "email" && !isEmailValid(inputValue) && (
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider">
+                        Введите корректный E-mail (например: user@example.com)
+                      </p>
+                    )}
+                    {inputValue && method === "phone" && !isPhoneValid(inputValue) && (
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider">
+                        Номер должен быть в формате +998 и содержать 9 цифр после кода (введено: {inputValue.replace(/[^0-9]/g, "").length}/12 цифр)
+                      </p>
+                    )}
                   </div>
 
                   {/* Password Input */}
@@ -269,6 +348,11 @@ export default function AuthPage() {
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
+                    {password && password.length < 8 && (
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider">
+                        Пароль должен содержать не менее 8 символов (введено: {password.length})
+                      </p>
+                    )}
                   </div>
 
                   {/* Confirm Password (Register mode only) */}
@@ -294,6 +378,11 @@ export default function AuthPage() {
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-[9px] text-red-400 mt-1 uppercase tracking-wider">
+                          Пароли не совпадают
+                        </p>
+                      )}
                     </motion.div>
                   )}
 
@@ -303,8 +392,8 @@ export default function AuthPage() {
 
                   <Button 
                     type="submit"
-                    disabled={loading}
-                    className="w-full h-12 rounded-none bg-brand-blue text-white group uppercase tracking-widest font-bold text-[10px] md:text-xs shadow-sm hover:bg-brand-blue/90 disabled:opacity-50"
+                    disabled={loading || !isStep1Valid()}
+                    className="w-full h-12 rounded-none bg-brand-blue text-white group uppercase tracking-widest font-bold text-[10px] md:text-xs shadow-sm hover:bg-brand-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Продолжить"}
                     {!loading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
@@ -367,10 +456,15 @@ export default function AuthPage() {
                     <input 
                       type="text"
                       value={registerPhone}
-                      onChange={(e) => { setRegisterPhone(e.target.value); setValidationError(""); }}
-                      placeholder="+998 -- --- -- --"
+                      onChange={(e) => handleRegisterPhoneChange(e.target.value)}
+                      placeholder="+998 90 123 45 67"
                       className="w-full bg-transparent border-b border-slate-200 py-3 pl-8 text-xs md:text-sm font-semibold text-brand-blue tracking-normal focus:outline-none focus:border-brand-blue transition-colors placeholder:text-slate-300 placeholder:uppercase placeholder:tracking-widest"
                     />
+                    {registerPhone && registerPhone.trim() !== "+998" && !isPhoneValid(registerPhone) && (
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider">
+                        Номер должен быть в формате +998 и содержать 9 цифр после кода (введено: {registerPhone.replace(/[^0-9]/g, "").length}/12 цифр)
+                      </p>
+                    )}
                   </div>
 
                   {validationError && (
@@ -379,8 +473,8 @@ export default function AuthPage() {
 
                   <Button 
                     type="submit"
-                    disabled={loading}
-                    className="w-full h-12 rounded-none bg-brand-blue text-white group uppercase tracking-widest font-bold text-[10px] md:text-xs shadow-sm hover:bg-brand-blue/90 disabled:opacity-50"
+                    disabled={loading || !isStep2Valid()}
+                    className="w-full h-12 rounded-none bg-brand-blue text-white group uppercase tracking-widest font-bold text-[10px] md:text-xs shadow-sm hover:bg-brand-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? "Создание аккаунта..." : "Завершить регистрацию"}
                     {!loading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}

@@ -270,11 +270,30 @@ async def read_product(
                         "bahtl20Z": "XL",
                         
                         # Highload Block b_hlbd_razmery size hashes
+                        # Adults & Teens
+                        "0a9ba8f9c12f6df659dc009a22db8197": "XXS",
                         "2bb51496fe8b72b6aa984b8975ab528c": "XS",
                         "ac7c6f452cc57aeca3ed9c14e0aa4d06": "S",
                         "c4150de8d2bab3737740665dac14885f": "M",
                         "526ba9f8e4f82e3ffa85b69dd75ff8e7": "L",
                         "7dda4dcd82e2423ec6866c4643cf5857": "XL",
+                        
+                        # Kids
+                        "994738ea6cfd61e697cc6ad5efd9886a": "92",
+                        "c19589efc595abbba590a20ceee38064": "98",
+                        "66675c702b09d7d26366fdb68979e601": "104",
+                        "3f3962a3fd59bfedd1c42c4c2b6ab49a": "110",
+                        "27c2cfc5479ed00908af0f3c3fd8da99": "116",
+                        "36337330031518aeecf9ea3c7b672b38": "122",
+                        "9509e720c033b2cccdbad9d84ea99933": "128",
+                        "bf0f2c1c3b2f5ee15745d3276ac39219": "134",
+                        
+                        # Infants & Toddlers
+                        "9f22143114a0c78d81cb1fdf7b2760a1": "56",
+                        "781f58bf8c1d23f891ad09ac4262c8e5": "62",
+                        "0108025956712c6b58f0bb49ddcad1bd": "68",
+                        "28456ee60c4f94771ce54e44a847fe89": "74",
+                        "7939102f96380e1f901d176d825b6251": "80",
                     }
                     
                     variants_map = {}
@@ -384,6 +403,15 @@ async def read_product(
                                 variants_map[color]["images"].append(img)
                                 
                     variants = list(variants_map.values())
+                    
+                    # Collect all unique sizes from the variants dynamically
+                    dynamic_sizes = []
+                    for v in variants_map.values():
+                        for sz in v["sizes"]:
+                            if sz and sz not in dynamic_sizes:
+                                dynamic_sizes.append(sz)
+                    if dynamic_sizes:
+                        sizes = ", ".join(dynamic_sizes)
         except Exception as e:
             import logging
             logging.getLogger(__name__).error(f"Failed to fetch dynamic variants from Bitrix24: {str(e)}")

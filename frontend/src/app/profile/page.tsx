@@ -15,6 +15,89 @@ export default function ProfilePage() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
 
+  // Payment Drawer States
+  const [activePaymentOrder, setActivePaymentOrder] = useState<any | null>(null);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
+
+  const handleSelectNewPaymentMethod = async (method: "click" | "payme" | "cod") => {
+    if (!activePaymentOrder) return;
+    
+    const orderId = activePaymentOrder.id;
+    const rawId = orderId.replace(/[^\d]/g, "");
+    const amount = parseInt(activePaymentOrder.total.replace(/[^\d]/g, "")) || 0;
+    
+    if (method === "cod") {
+      setUpdatingPayment(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/v1/orders/${encodeURIComponent(orderId)}/payment-method`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ method: "cod", status: "Created" })
+        });
+        
+        if (res.ok) {
+          // Update local orders list state dynamically
+          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, method: "При получении", status: "Created" } : o));
+          setActivePaymentOrder(null);
+        } else {
+          alert("Не удалось изменить способ оплаты. Попробуйте еще раз.");
+        }
+      } catch (err) {
+        console.error("Failed to update payment method:", err);
+      } finally {
+        setUpdatingPayment(false);
+      }
+    } else if (method === "click") {
+      // Redirect to CLICK
+      const returnUrl = encodeURIComponent(window.location.origin + "/profile");
+      const clickUrl = `https://my.click.uz/services/pay?service_id=101626&merchant_id=45275&amount=${amount}&transaction_param=ORD-${rawId}&merchant_user_id=83104&return_url=${returnUrl}`;
+      
+      // Update method in backend first, then redirect
+      try {
+        const token = localStorage.getItem("token");
+        await fetch(`/api/v1/orders/${encodeURIComponent(orderId)}/payment-method`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ method: "click" })
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      
+      window.location.href = clickUrl;
+    } else if (method === "payme") {
+      // Redirect to Payme
+      const token = localStorage.getItem("token");
+      try {
+        await fetch(`/api/v1/orders/${encodeURIComponent(orderId)}/payment-method`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ method: "payme" })
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      
+      // Payme link format (Base64 params)
+      const paymeMerchantId = "69454dd1656e7b8e815da033"; 
+      const amountInTiyin = amount * 100;
+      const base64Params = window.btoa(`m=${paymeMerchantId};ac.order_id=ORD-${rawId};a=${amountInTiyin}`);
+      const paymeUrl = `https://checkout.paycom.uz/${base64Params}`;
+      
+      window.location.href = paymeUrl;
+    }
+  };
+
   const handleRepeatOrder = async (order: any) => {
     setRepeatingId(order.id);
     
@@ -450,6 +533,130 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
+      {/* Right Drawer: Payment Selector */}
+      <AnimatePresence>
+        {activePaymentOrder && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActivePaymentOrder(null)}
+              className="fixed inset-0 bg-brand-blue/40 backdrop-blur-sm z-[130] cursor-pointer"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-full sm:max-w-sm bg-white z-[140] shadow-2xl flex flex-col border-l border-slate-100 rounded-none font-sans"
+            >
+              <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                  <div className="flex items-center gap-3">
+                    <span className="w-1.5 h-1.5 bg-[#f59e0b] rounded-full animate-pulse" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-brand-blue">Оплата заказа {activePaymentOrder.id}</h2>
+                  </div>
+                  <button onClick={() => setActivePaymentOrder(null)} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer border border-transparent rounded-none">
+                    <X className="w-4 h-4 text-brand-blue" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-grow overflow-y-auto p-5 space-y-6">
+                  
+                  {/* Order summary info */}
+                  <div className="bg-slate-50 border border-slate-100 p-4 space-y-2 rounded-none">
+                    <p className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Сумма к оплате</p>
+                    <p className="text-xl font-black text-brand-blue">{activePaymentOrder.total}</p>
+                    <p className="text-[9px] text-slate-400">Текущий способ: <span className="font-bold text-brand-blue">{activePaymentOrder.method || "Не указан"}</span></p>
+                  </div>
+
+                  {/* Payment Methods Section */}
+                  <div className="space-y-3">
+                    <p className="text-[9px] uppercase tracking-widest text-slate-400 font-black">Выберите способ оплаты</p>
+                    
+                    <div className="space-y-2">
+                      
+                      {/* Method 1: CLICK */}
+                      <button
+                        onClick={() => handleSelectNewPaymentMethod("click")}
+                        className="w-full text-left p-4 border border-slate-200 hover:border-brand-blue active:scale-[0.98] transition-all bg-white flex items-center justify-between rounded-none group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-slate-100 bg-white p-1">
+                            <img 
+                              src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Click_uz_logo.png" 
+                              alt="CLICK" 
+                              className="w-full h-full object-contain" 
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-extrabold text-brand-blue uppercase tracking-wider group-hover:text-brand-blue transition-colors">CLICK Онлайн</p>
+                            <p className="text-[9px] text-slate-400 mt-0.5">Оплата картами Uzcard/Humo/Visa</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-blue transition-all" />
+                      </button>
+
+                      {/* Method 2: Payme */}
+                      <button
+                        onClick={() => handleSelectNewPaymentMethod("payme")}
+                        className="w-full text-left p-4 border border-slate-200 hover:border-brand-blue active:scale-[0.98] transition-all bg-white flex items-center justify-between rounded-none group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-slate-100 bg-white p-1">
+                            <img 
+                              src="https://cdn.payme.uz/logo/payme_color.svg" 
+                              alt="Payme" 
+                              className="w-full h-full object-contain" 
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-extrabold text-brand-blue uppercase tracking-wider group-hover:text-brand-blue transition-colors">Payme Онлайн</p>
+                            <p className="text-[9px] text-slate-400 mt-0.5">Быстрая оплата через приложение</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-blue transition-all" />
+                      </button>
+
+                      {/* Method 3: COD / Cash */}
+                      <button
+                        onClick={() => handleSelectNewPaymentMethod("cod")}
+                        className="w-full text-left p-4 border border-slate-200 hover:border-brand-blue active:scale-[0.98] transition-all bg-white flex items-center justify-between rounded-none group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-slate-100 bg-[#f8fafc] font-black text-brand-blue text-[9px] uppercase tracking-tighter">
+                            <span>UZS</span>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-extrabold text-brand-blue uppercase tracking-wider group-hover:text-brand-blue transition-colors">При получении (Наличные)</p>
+                            <p className="text-[9px] text-slate-400 mt-0.5">Оплата курьеру при доставке заказа</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-blue transition-all" />
+                      </button>
+
+                    </div>
+                  </div>
+                  
+                </div>
+
+                {/* Footer with support */}
+                <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <span className="text-[8px] text-slate-400 uppercase tracking-widest font-black">Служба поддержки</span>
+                  <a href="tel:+998991234567" className="text-[9px] text-brand-blue font-extrabold uppercase tracking-wider hover:underline">+998 (99) 123-45-67</a>
+                </div>
+
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Order Details Drawer */}
       <AnimatePresence>
         {selectedOrder && (
@@ -686,15 +893,15 @@ export default function ProfilePage() {
                                   </div>
                                </div>
                                <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2 py-1 sm:px-4 sm:py-1.5 border rounded-none ${
-                                 order.status === 'Оплачен' || order.status === 'Доставлено'
+                                 order.status === 'Оплачен' || order.status === 'Доставлено' || order.status === 'Paid' || order.status === 'Доставлен' || order.status === 'Delivered'
                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                 : order.status === 'Отправлен'
+                                 : order.status === 'Отправлен' || order.status === 'Shipped' || order.status === 'Доставляется' || order.status === 'Created' || order.status === 'Заказ создан'
                                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                 : order.status === 'Отменен'
+                                 : order.status === 'Отменен' || order.status === 'Cancelled'
                                  ? 'bg-rose-50 border-rose-200 text-rose-700'
                                  : 'bg-amber-50 border-amber-200 text-amber-700' // 'В ожидании'
                                }`}>
-                                 {order.status}
+                                 {order.status === 'Pending' || order.status === 'В ожидании' || order.status === 'Ожидает оплаты' || order.status === 'Ожидает оплату' ? 'Ожидает оплаты' : (order.status === 'Created' || order.status === 'Заказ создан' ? 'Заказ создан' : (order.status === 'Shipped' || order.status === 'Доставляется' ? 'Доставляется' : (order.status === 'Delivered' || order.status === 'Доставлен' ? 'Доставлен' : (order.status === 'Paid' || order.status === 'Оплачен' ? 'Оплачен' : (order.status === 'Cancelled' || order.status === 'Отменен' ? 'Отменен' : order.status)))))}
                                </span>
                             </div>
                             
@@ -715,7 +922,20 @@ export default function ProfilePage() {
                               </div>
                             </div>
 
-                            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 flex justify-end">
+                            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 flex justify-between items-center">
+                              {/* Amber Pay Button if unpaid */}
+                              {(order.status === 'Pending' || order.status === 'В ожидании' || order.status === 'Ожидает оплаты' || order.status === 'Ожидает оплату') ? (
+                                <button
+                                  onClick={() => setActivePaymentOrder(order)}
+                                  className="px-5 py-2 bg-[#f59e0b] hover:bg-[#d97706] active:scale-[0.98] text-white text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-none border-none flex items-center gap-2"
+                                >
+                                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                                  <span>Оплатить</span>
+                                </button>
+                              ) : (
+                                <div />
+                              )}
+                              
                               <button 
                                 onClick={() => setSelectedOrder(order)}
                                 className="text-[9px] font-bold uppercase tracking-[0.05em] text-brand-blue flex items-center gap-3 group/btn"

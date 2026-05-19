@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 1200
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "find /root/liberty-wear/frontend/src/components -type f | xargs sed -i 's|http://localhost:8002/api/v1|/api/v1|g' && grep -r '\"use client\"' /root/liberty-wear/frontend/src/app -l | xargs sed -i 's|http://localhost:8002/api/v1|/api/v1|g' && cd /root/liberty-wear/frontend && export NODE_OPTIONS='--max-old-space-size=1024' && npm run build && pm2 restart liberty-frontend"
-expect "*password:*"
-send -- "$pass\r"
-expect eof

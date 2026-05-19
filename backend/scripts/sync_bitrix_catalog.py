@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Add project root to sys.path
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
 from app.db.session import SessionLocal
 from app.models.product import Product

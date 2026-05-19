@@ -43,9 +43,11 @@ interface Order {
 }
 
 const statusConfig = {
+  Pending: { label: "Ожидает оплаты", icon: Clock, emoji: "🕒", color: "text-[#f59e0b]", bg: "bg-[#f59e0b]/10" },
+  Created: { label: "Заказ создан", icon: CheckCircle2, emoji: "✨", color: "text-blue-600", bg: "bg-blue-50" },
   Paid: { label: "Оплачен", icon: CheckCircle2, emoji: "✅", color: "text-[#10b981]", bg: "bg-[#10b981]/10" },
-  Pending: { label: "Ожидание", icon: Clock, emoji: "🕒", color: "text-[#f59e0b]", bg: "bg-[#f59e0b]/10" },
-  Shipped: { label: "Отправлен", icon: Truck, emoji: "🚚", color: "text-[#2c3b6e]", bg: "bg-[#2c3b6e]/10" },
+  Shipped: { label: "Доставляется", icon: Truck, emoji: "🚚", color: "text-[#2c3b6e]", bg: "bg-[#2c3b6e]/10" },
+  Delivered: { label: "Доставлен", icon: CheckCircle2, emoji: "📦", color: "text-emerald-700", bg: "bg-emerald-50" },
   Cancelled: { label: "Отменен", icon: XCircle, emoji: "❌", color: "text-[#cd5c5c]", bg: "bg-[#cd5c5c]/10" },
 };
 
@@ -232,7 +234,7 @@ export default function OrdersPage() {
     fetchUsers();
   }, []);
 
-  const tabs = ["Все", "Ожидание", "Оплаченные", "Отправленные", "Отмененные"];
+  const tabs = ["Все", "Ожидает оплаты", "Заказ создан", "Оплаченные", "Доставляется", "Доставлен", "Отмененные"];
 
   const filteredOrders = dynamicOrders.filter(order => {
     const matchesSearch = 
@@ -240,9 +242,11 @@ export default function OrdersPage() {
       order.customer.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (activeTab === "Все") return matchesSearch;
-    if (activeTab === "Ожидание") return matchesSearch && order.status === "Pending";
+    if (activeTab === "Ожидает оплаты") return matchesSearch && order.status === "Pending";
+    if (activeTab === "Заказ создан") return matchesSearch && order.status === "Created";
     if (activeTab === "Оплаченные") return matchesSearch && order.status === "Paid";
-    if (activeTab === "Отправленные") return matchesSearch && order.status === "Shipped";
+    if (activeTab === "Доставляется") return matchesSearch && order.status === "Shipped";
+    if (activeTab === "Доставлен") return matchesSearch && order.status === "Delivered";
     if (activeTab === "Отмененные") return matchesSearch && order.status === "Cancelled";
     return matchesSearch;
   });

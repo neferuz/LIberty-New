@@ -29,7 +29,17 @@ export default function RootLayout({
     <html lang="ru" className={`${evolventa.variable}`}>
       <body className="font-sans antialiased bg-white text-brand-blue selection:bg-brand-blue selection:text-white">
         {/* Hidden Google Translate element */}
-        <div id="google_translate_element" style={{ display: "none" }} />
+        <div 
+          id="google_translate_element" 
+          style={{ 
+            position: "absolute", 
+            opacity: 0, 
+            width: 0, 
+            height: 0, 
+            overflow: "hidden", 
+            pointerEvents: "none" 
+          }} 
+        />
         
         <Script id="google-translate-init" strategy="afterInteractive">
           {`
@@ -44,7 +54,7 @@ export default function RootLayout({
           `}
         </Script>
         <Script
-          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
           strategy="afterInteractive"
         />
 

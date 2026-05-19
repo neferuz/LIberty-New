@@ -12,7 +12,7 @@ async def sync_single_product(product_id: int, db: Session):
     """Fetch specific product from Bitrix and update local DB"""
     try:
         logger.info(f"Webhook: Syncing product ID {product_id}")
-        # Fetch full details for this product
+        # Fetch full details for this product (including PROPERTY_115 for composition)
         p = await bitrix_service._call('crm.product.get', {'id': product_id})
         
         if not p or 'ID' not in p:
@@ -22,23 +22,69 @@ async def sync_single_product(product_id: int, db: Session):
         bitrix_id = int(p["ID"])
         all_images = []
         
-        # 1. Fetch images from offers
+        size_names_mapping = {
+            "aIlu058O": "XS",
+            "fLmaA85S": "S",
+            "xdT4Fm3j": "M",
+            "0SexOax9": "L",
+            "bahtl20Z": "XL",
+            
+            # Highload Block b_hlbd_razmery size hashes
+            # Adults & Teens
+            "0a9ba8f9c12f6df659dc009a22db8197": "XXS",
+            "2bb51496fe8b72b6aa984b8975ab528c": "XS",
+            "ac7c6f452cc57aeca3ed9c14e0aa4d06": "S",
+            "c4150de8d2bab3737740665dac14885f": "M",
+            "526ba9f8e4f82e3ffa85b69dd75ff8e7": "L",
+            "7dda4dcd82e2423ec6866c4643cf5857": "XL",
+            
+            # Kids
+            "994738ea6cfd61e697cc6ad5efd9886a": "92",
+            "c19589efc595abbba590a20ceee38064": "98",
+            "66675c702b09d7d26366fdb68979e601": "104",
+            "3f3962a3fd59bfedd1c42c4c2b6ab49a": "110",
+            "27c2cfc5479ed00908af0f3c3fd8da99": "116",
+            "36337330031518aeecf9ea3c7b672b38": "122",
+            "9509e720c033b2cccdbad9d84ea99933": "128",
+            "bf0f2c1c3b2f5ee15745d3276ac39219": "134",
+            
+            # Infants & Toddlers
+            "9f22143114a0c78d81cb1fdf7b2760a1": "56",
+            "781f58bf8c1d23f891ad09ac4262c8e5": "62",
+            "0108025956712c6b58f0bb49ddcad1bd": "68",
+            "28456ee60c4f94771ce54e44a847fe89": "74",
+            "7939102f96380e1f901d176d825b6251": "80",
+        }
+
+        # 1. Fetch images and sizes from offers
+        offer_sizes = []
         offers = await bitrix_service._call('catalog.product.offer.list', {
             'filter': {'parentId': bitrix_id, 'iblockId': 17},
-            'select': ['id', 'iblockId']
+            'select': ['id', 'iblockId', 'property131']
         })
-        offer_list = offers.get('offers', [])
+        offer_list = offers.get('offers', []) if isinstance(offers, dict) else []
         for offer in offer_list:
             o_img_res = await bitrix_service._call('catalog.productImage.list', {'productId': offer['id']})
-            o_imgs = o_img_res.get('productImages', [])
+            o_imgs = o_img_res.get('productImages', []) if isinstance(o_img_res, dict) else []
             for o_img in o_imgs:
                 url = o_img.get('detailUrl')
                 if url and url not in all_images:
                     all_images.append(url)
+            
+            size_val = offer.get('property131')
+            size_hash = None
+            if isinstance(size_val, dict):
+                size_hash = size_val.get('value')
+            elif size_val:
+                size_hash = str(size_val)
+                
+            mapped_size = size_names_mapping.get(size_hash, size_hash)
+            if mapped_size and mapped_size not in offer_sizes:
+                offer_sizes.append(mapped_size)
         
         # 2. Try the product itself catalog image list
         img_res = await bitrix_service._call('catalog.productImage.list', {'productId': bitrix_id})
-        imgs = img_res.get('productImages', [])
+        imgs = img_res.get('productImages', []) if isinstance(img_res, dict) else []
         for img in imgs:
             url = img.get('detailUrl')
             if url and url not in all_images:
@@ -78,6 +124,41 @@ async def sync_single_product(product_id: int, db: Session):
         section_id = int(p.get('SECTION_ID', 0))
         category_name = category_map.get(section_id, "General")
 
+        # Parse fabric composition / characteristics from PROPERTY_115
+        composition = None
+        prop115 = p.get('PROPERTY_115')
+        char_text = ""
+        if isinstance(prop115, dict):
+            char_text = prop115.get('value', '')
+        elif prop115:
+            char_text = str(prop115)
+        
+        if char_text:
+            char_text_cleaned = char_text.replace('"', '').replace("'", "")
+            if ':' in char_text_cleaned:
+                parts = char_text_cleaned.split()
+                current_key = None
+                current_val_words = []
+                characteristics = {}
+                
+                for word in parts:
+                    if word.endswith(':'):
+                        if current_key:
+                            characteristics[current_key] = " ".join(current_val_words)
+                        current_key = word[:-1].upper()
+                        current_val_words = []
+                    else:
+                        current_val_words.append(word)
+                if current_key and current_val_words:
+                    characteristics[current_key] = " ".join(current_val_words)
+                
+                if "СОСТАВ" in characteristics:
+                    composition = characteristics["СОСТАВ"]
+            else:
+                composition = char_text_cleaned
+
+        sizes_str = ", ".join(offer_sizes) if offer_sizes else None
+
         product = db.query(Product).filter(Product.bitrix_id == bitrix_id).first()
         if not product:
             product = db.query(Product).filter(Product.sku == sku).first()
@@ -92,7 +173,9 @@ async def sync_single_product(product_id: int, db: Session):
             "is_active": p.get('ACTIVE') == 'Y',
             "category": category_name,
             "category_id": section_id,
-            "bitrix_id": bitrix_id
+            "bitrix_id": bitrix_id,
+            "sizes": sizes_str,
+            "composition": composition
         }
 
         if product:

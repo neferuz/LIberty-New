@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 120
-set pass "nE315uSK*?t#DQ"
-spawn ssh -o StrictHostKeyChecking=no root@147.45.155.163 "sed -i 's|/Users/apple/Desktop/liberty-wear|/root/liberty-wear|g' /root/liberty-wear/backend/app/core/config.py"
-expect "*password:*"
-send -- "$pass\r"
-expect eof
