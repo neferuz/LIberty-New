@@ -12,15 +12,22 @@ interface AboutData {
     overline: string; 
     title: string; 
     description: string; 
-    stats: { value: string; label: string }[] 
+    stats: { value: string; label: string }[];
+    imageUrl?: string;
   };
   craftsmanship: { 
     overline: string; 
     title: string; 
     cards: { title: string; desc: string }[] 
   };
-  visualStory: { title: string };
-  cta: { title: string };
+  visualStory: { title: string; imageUrl?: string };
+  cta: { 
+    title: string;
+    button1Text?: string;
+    button1Href?: string;
+    button2Text?: string;
+    button2Href?: string;
+  };
 }
 
 export default function AboutPage() {
@@ -112,50 +119,56 @@ export default function AboutPage() {
       ]
     },
     visualStory: { title: "Создано для жизни. Спроектировано для вечности." },
-    cta: { title: "Начните свою историю с нами." }
+    cta: { 
+      title: "Начните свою историю с нами.",
+      button1Text: "Магазин",
+      button1Href: "/shop",
+      button2Text: "Лукбук",
+      button2Href: "/lookbook"
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
       
-      <main className="pt-32 pb-16 relative overflow-hidden">
+      <main className="pt-20 md:pt-24 pb-8 md:pb-12 relative overflow-hidden">
         {/* Background Grid */}
         <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
         
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
           {/* Hero Section */}
-          <section className="mb-24 mt-12">
+          <section className="mb-8 md:mb-12 mt-3 md:mt-6">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1 }}
-              className="text-center space-y-6"
+              className="text-center space-y-4 md:space-y-6"
             >
-              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-brand-blue uppercase leading-none">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold tracking-tighter text-brand-blue uppercase leading-none">
                 {content.hero.title.split(' ')[0]} <span className="text-slate-200">{content.hero.title.split(' ')[1]}</span>
               </h1>
-              <p className="text-sm md:text-base text-slate-400 uppercase tracking-[0.1em] max-w-xl mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm md:text-base text-slate-400 uppercase tracking-[0.1em] max-w-xl mx-auto leading-relaxed px-4">
                 {content.hero.subtitle}
               </p>
             </motion.div>
           </section>
 
           {/* Philosophy Section */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24 items-center">
-            <motion.div {...fadeInUp} className="space-y-6">
-              <span className="text-[10px] font-bold text-brand-blue uppercase tracking-[0.2em]">{content.philosophy.overline}</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-tight leading-tight">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 mb-10 md:mb-16 items-center">
+            <motion.div {...fadeInUp} className="space-y-4 md:space-y-6">
+              <span className="text-[9px] sm:text-[10px] font-bold text-brand-blue uppercase tracking-[0.2em]">{content.philosophy.overline}</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-tight leading-tight">
                 {content.philosophy.title}
               </h2>
-              <p className="text-slate-500 text-[13px] leading-relaxed max-w-md">
+              <p className="text-slate-500 text-[12px] sm:text-[13px] leading-relaxed max-w-md">
                 {content.philosophy.description}
               </p>
-              <div className="pt-6 border-t border-slate-100 flex gap-10">
+              <div className="pt-4 md:pt-6 border-t border-slate-100 flex flex-wrap gap-4 sm:gap-10">
                 {content.philosophy.stats.map((stat, i) => (
-                  <div key={i}>
-                    <p className="text-xl font-bold text-brand-blue">{stat.value}</p>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">{stat.label}</p>
+                  <div key={i} className="min-w-[80px]">
+                    <p className="text-lg md:text-xl font-bold text-brand-blue">{stat.value}</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -165,10 +178,10 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
-              className="relative aspect-[4/3] bg-slate-50 overflow-hidden rounded-sm"
+              className="relative aspect-[16/10] sm:aspect-[4/3] bg-slate-50 overflow-hidden rounded-sm"
             >
               <Image 
-                src="/images/hero1.jpg" 
+                src={content.philosophy.imageUrl || "/images/hero1.jpg"} 
                 alt="Philosophy" 
                 fill 
                 className="object-cover grayscale hover:grayscale-0 transition-all duration-1000"
@@ -178,29 +191,29 @@ export default function AboutPage() {
           </section>
 
           {/* Craftsmanship Section */}
-          <section className="mb-24">
-            <div className="text-center mb-16 space-y-3">
-              <span className="text-[10px] font-bold text-brand-blue uppercase tracking-[0.2em]">{content.craftsmanship.overline}</span>
-              <h2 className="text-3xl font-bold text-brand-blue uppercase tracking-tighter">{content.craftsmanship.title}</h2>
+          <section className="mb-10 md:mb-16">
+            <div className="text-center mb-6 md:mb-10 space-y-1.5">
+              <span className="text-[9px] sm:text-[10px] font-bold text-brand-blue uppercase tracking-[0.2em]">{content.craftsmanship.overline}</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-brand-blue uppercase tracking-tighter">{content.craftsmanship.title}</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {content.craftsmanship.cards.map((item, i) => (
                 <motion.div 
                   key={i}
                   {...fadeInUp}
                   transition={{ delay: i * 0.2 }}
-                  className="p-8 border border-slate-100 hover:border-brand-blue transition-colors group"
+                  className="p-5 md:p-6 border border-slate-100 hover:border-brand-blue transition-colors group"
                 >
-                  <h3 className="text-xs font-bold text-brand-blue uppercase tracking-widest mb-4 group-hover:translate-x-1 transition-transform">{item.title}</h3>
-                  <p className="text-[11px] text-slate-500 leading-relaxed uppercase tracking-wider">{item.desc}</p>
+                  <h3 className="text-xs font-bold text-brand-blue uppercase tracking-widest mb-2 md:mb-4 group-hover:translate-x-1 transition-transform">{item.title}</h3>
+                  <p className="text-[11px] sm:text-[12px] text-slate-500 leading-relaxed">{item.desc}</p>
                 </motion.div>
               ))}
             </div>
           </section>
 
           {/* Visual Storytelling */}
-          <section className="relative h-[50vh] mb-24 overflow-hidden rounded-sm">
+          <section className="relative h-[25vh] sm:h-[35vh] mb-10 md:mb-16 overflow-hidden rounded-sm">
             <motion.div 
               initial={{ scale: 1.1, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
@@ -209,7 +222,7 @@ export default function AboutPage() {
               className="absolute inset-0"
             >
               <Image 
-                src="/images/hero3.jpg" 
+                src={content.visualStory.imageUrl || "/images/hero3.jpg"} 
                 alt="Visual Story" 
                 fill 
                 className="object-cover grayscale"
@@ -217,8 +230,8 @@ export default function AboutPage() {
               <div className="absolute inset-0 bg-brand-blue/20 backdrop-blur-[2px]" />
             </motion.div>
             <div className="absolute inset-0 flex items-center justify-center text-center">
-              <div className="max-w-2xl px-6 space-y-6">
-                <h2 className="text-3xl md:text-5xl font-bold text-white uppercase tracking-tighter leading-none">
+              <div className="max-w-2xl px-4 sm:px-6 space-y-4">
+                <h2 className="text-xl sm:text-3xl md:text-5xl font-bold text-white uppercase tracking-tighter leading-tight px-2">
                   {content.visualStory.title}
                 </h2>
               </div>
@@ -226,12 +239,22 @@ export default function AboutPage() {
           </section>
 
           {/* Timeline / Call to Action */}
-          <section className="text-center py-16 border-y border-slate-100 mb-12">
-            <motion.div {...fadeInUp} className="space-y-10">
-              <h2 className="text-2xl font-bold text-brand-blue uppercase tracking-tighter">{content.cta.title}</h2>
-              <div className="flex justify-center gap-10">
-                <a href="/shop" className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-blue hover:text-slate-400 transition-colors border-b border-brand-blue pb-2">Магазин</a>
-                <a href="/lookbook" className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-blue hover:text-slate-400 transition-colors border-b border-brand-blue pb-2">Лукбук</a>
+          <section className="text-center py-6 md:py-10 border-y border-slate-100 mb-4">
+            <motion.div {...fadeInUp} className="space-y-4 md:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-brand-blue uppercase tracking-tighter px-2">{content.cta.title}</h2>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 px-4 sm:px-0">
+                <a 
+                  href={content.cta.button1Href || "/shop"} 
+                  className="w-full sm:w-auto min-w-[160px] inline-flex items-center justify-center bg-brand-blue text-white px-8 py-2.5 sm:py-3 text-[10px] font-bold uppercase tracking-[0.2em] border border-brand-blue hover:bg-white hover:text-brand-blue transition-all duration-300"
+                >
+                  {content.cta.button1Text || "Магазин"}
+                </a>
+                <a 
+                  href={content.cta.button2Href || "/lookbook"} 
+                  className="w-full sm:w-auto min-w-[160px] inline-flex items-center justify-center bg-white text-brand-blue px-8 py-2.5 sm:py-3 text-[10px] font-bold uppercase tracking-[0.2em] border border-brand-blue hover:bg-brand-blue hover:text-white transition-all duration-300"
+                >
+                  {content.cta.button2Text || "Лукбук"}
+                </a>
               </div>
             </motion.div>
           </section>

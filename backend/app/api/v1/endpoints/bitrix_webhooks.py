@@ -8,6 +8,42 @@ import logging
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+def is_valid_size(size: str) -> bool:
+    if not size:
+        return False
+    clean = size.strip().upper()
+    
+    # 1. Standard clothing sizes (whitelist)
+    standard_sizes = {"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "XXXXL", "2XS", "3XS", "4XL", "5XL", "6XL"}
+    if clean in standard_sizes:
+        return True
+        
+    # 2. One Size keywords (whitelist)
+    one_size_keywords = {"ONE SIZE", "ONESIZE", "OS", "O/S", "UNISEX", "UNI", "ONE-SIZE"}
+    if clean in one_size_keywords:
+        return True
+        
+    # 3. Numeric sizes (usually 2 or 3 digits)
+    import re
+    if re.match(r"^\d{2,3}$", clean):
+        num = int(clean)
+        # Allow standard heights (92-188) or European/Russian clothing/shoe sizes (24-68)
+        return (24 <= num <= 68) or (92 <= num <= 188)
+        
+    # 4. Slashed numeric sizes like 42/44 or 42-44
+    if re.match(r"^\d{2}[/-]\d{2}$", clean):
+        return True
+        
+    # 5. Slashed letter sizes like S/M or XS-S
+    if re.match(r"^[A-Z]{1,3}[/-][A-Z]{1,3}$", clean):
+        return True
+        
+    # 6. Very short codes (1-3 chars) consisting only of letters or digits
+    if len(clean) <= 3 and re.match(r"^[A-Z0-9]+$", clean):
+        return True
+        
+    return False
+
 async def sync_single_product(product_id: int, db: Session, category_map: dict = None):
     """Fetch specific product from Bitrix and update local DB"""
     try:
@@ -90,8 +126,10 @@ async def sync_single_product(product_id: int, db: Session, category_map: dict =
                     size_hash = str(size_val)
                     
                 mapped_size = size_names_mapping.get(size_hash, size_hash)
-                if mapped_size and mapped_size not in offer_sizes:
-                    offer_sizes.append(mapped_size)
+                if mapped_size:
+                    mapped_size = mapped_size.strip()
+                    if is_valid_size(mapped_size) and mapped_size not in offer_sizes:
+                        offer_sizes.append(mapped_size)
         
         # 2. Try the product itself catalog image list
         img_res = await bitrix_service._call('catalog.productImage.list', {'productId': bitrix_id})
@@ -210,6 +248,21 @@ async def sync_single_product(product_id: int, db: Session, category_map: dict =
         db.rollback()
         logger.error(f"Webhook: Error syncing product {product_id}: {str(e)}")
 
+async def delete_single_product(product_id: int, db: Session):
+    """Delete specific product from local DB when deleted in Bitrix"""
+    try:
+        logger.info(f"Webhook: Deleting product ID {product_id}")
+        product = db.query(Product).filter(Product.bitrix_id == product_id).first()
+        if product:
+            db.delete(product)
+            db.commit()
+            logger.info(f"Webhook: Successfully deleted product {product.name} (ID: {product_id})")
+        else:
+            logger.warning(f"Webhook: Product ID {product_id} not found in DB for deletion")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Webhook: Error deleting product {product_id}: {str(e)}")
+
 @router.post("/events")
 async def bitrix_event_handler(
     request: Request,
@@ -227,5 +280,8 @@ async def bitrix_event_handler(
         if data:
             # Run sync in background to respond quickly to Bitrix
             background_tasks.add_task(sync_single_product, int(data), db)
+    elif event == "ONCRMPRODUCTDELETE":
+        if data:
+            background_tasks.add_task(delete_single_product, int(data), db)
             
     return {"status": "ok"}

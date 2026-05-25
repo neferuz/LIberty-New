@@ -125,7 +125,7 @@ export function CategoryContent({ slug, categoryTitle }: CategoryContentProps) {
                           <p className="text-[7px] md:text-[9px] text-slate-400 uppercase tracking-widest mb-0.5 truncate">
                             {product.gender === 'women' ? 'Для женщин' : 'Для мужчин'}
                           </p>
-                          <h3 className="text-[10px] md:text-xs font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-500 transition-colors truncate">
+                          <h3 className="text-[10px] md:text-xs font-bold text-brand-blue tracking-tight group-hover:text-slate-500 transition-colors truncate">
                             {product.name}
                           </h3>
                         </Link>

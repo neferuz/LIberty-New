@@ -345,7 +345,7 @@ function ShopContent() {
         
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="mb-6 md:mb-8">
-            <nav className="flex items-center gap-2 text-[8px] uppercase tracking-[0.2em] text-slate-400 mb-3">
+            <nav className="flex items-center gap-2 text-[10px] md:text-[12px] tracking-wide text-slate-400 mb-3">
               <Link href="/" className="hover:text-brand-blue transition-colors">Главная</Link>
               <span className="opacity-50">/</span>
               <span className="text-brand-blue font-bold">Каталог</span>
@@ -501,7 +501,7 @@ function ShopContent() {
                         <div className="min-w-0 flex-1">
                           <Link href={`/product/${product.sku ? `${formatSkuForUrl(product.sku)}-` : ''}${product.id}`}>
                             <p className="text-[8px] md:text-[10px] text-brand-blue/40 uppercase tracking-widest mb-0.5 truncate">{product.category || "General"}</p>
-                            <h3 className="text-[10px] md:text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-brand-blue/70 transition-colors truncate">{product.name}</h3>
+                            <h3 className="text-[10px] md:text-sm font-bold text-brand-blue tracking-tight group-hover:text-brand-blue/70 transition-colors truncate">{product.name}</h3>
                           </Link>
                         </div>
                         <button 

@@ -190,11 +190,34 @@ async def run_sync_in_background(db: Session):
         synced_count = sum(1 for r in results if r is True)
         errors_count = len(results) - synced_count
         
+        # 3. Clean up local products that have been deleted in Bitrix
+        bitrix_ids = {int(p["ID"]) for p in bitrix_prods}
+        from app.db.session import SessionLocal
+        from app.models.product import Product
+        cleanup_session = SessionLocal()
+        deleted_count = 0
+        try:
+            local_products = cleanup_session.query(Product).filter(Product.bitrix_id.isnot(None)).all()
+            for lp in local_products:
+                if lp.bitrix_id not in bitrix_ids:
+                    cleanup_session.delete(lp)
+                    deleted_count += 1
+            if deleted_count > 0:
+                cleanup_session.commit()
+                import logging
+                logging.getLogger(__name__).info(f"Sync: Cleaned up {deleted_count} deleted products from local DB.")
+        except Exception as cleanup_err:
+            cleanup_session.rollback()
+            import logging
+            logging.getLogger(__name__).error(f"Sync: Error during cleanup of deleted products: {str(cleanup_err)}")
+        finally:
+            cleanup_session.close()
+        
         LAST_SYNC_RESULT = {
             "status": "success",
             "synced_count": synced_count,
             "errors_count": errors_count,
-            "message": f"Successfully synchronized {synced_count} products from Bitrix24. Errors: {errors_count}"
+            "message": f"Successfully synchronized {synced_count} products from Bitrix24. Cleaned up deleted: {deleted_count}. Errors: {errors_count}"
         }
     except Exception as e:
         LAST_SYNC_RESULT = {
@@ -222,6 +245,42 @@ def get_sync_status():
         "syncing": IS_SYNCING,
         "last_result": LAST_SYNC_RESULT
     }
+
+def is_valid_size(size: str) -> bool:
+    if not size:
+        return False
+    clean = size.strip().upper()
+    
+    # 1. Standard clothing sizes (whitelist)
+    standard_sizes = {"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "XXXXL", "2XS", "3XS", "4XL", "5XL", "6XL"}
+    if clean in standard_sizes:
+        return True
+        
+    # 2. One Size keywords (whitelist)
+    one_size_keywords = {"ONE SIZE", "ONESIZE", "OS", "O/S", "UNISEX", "UNI", "ONE-SIZE"}
+    if clean in one_size_keywords:
+        return True
+        
+    # 3. Numeric sizes (usually 2 or 3 digits)
+    import re
+    if re.match(r"^\d{2,3}$", clean):
+        num = int(clean)
+        # Allow standard heights (92-188) or European/Russian clothing/shoe sizes (24-68)
+        return (24 <= num <= 68) or (92 <= num <= 188)
+        
+    # 4. Slashed numeric sizes like 42/44 or 42-44
+    if re.match(r"^\d{2}[/-]\d{2}$", clean):
+        return True
+        
+    # 5. Slashed letter sizes like S/M or XS-S
+    if re.match(r"^[A-Z]{1,3}[/-][A-Z]{1,3}$", clean):
+        return True
+        
+    # 6. Very short codes (1-3 chars) consisting only of letters or digits
+    if len(clean) <= 3 and re.match(r"^[A-Z0-9]+$", clean):
+        return True
+        
+    return False
 
 @router.get("/{id_or_sku}", response_model=schemas.product.Product)
 async def read_product(
@@ -442,6 +501,11 @@ async def read_product(
                         size = size_names_mapping.get(size_hash, size_hash)
                         if not size and size_hash:
                             size = size_hash
+                            
+                        if size:
+                            size = size.strip()
+                            if not is_valid_size(size):
+                                size = None
                             
                         resolved_offers.append({
                             "id": o_id,

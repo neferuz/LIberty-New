@@ -23,13 +23,13 @@ import { useState, useEffect, useRef } from "react";
 export default function HomePageEditor() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [activeTab, setActiveTab] = useState("Hero Секция");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<"hero" | "editorial" | null>(null);
   
   // Data State
   const [heroSlides, setHeroSlides] = useState<any[]>([]);
@@ -38,8 +38,6 @@ export default function HomePageEditor() {
   const [editorialSection, setEditorialSection] = useState({ overline: "", title1: "", title2: "", description: "", button1: "", button2: "", imageUrl: "", button1Href: "", button2Href: "" });
   const [newsletterSection, setNewsletterSection] = useState({ title: "", description: "" });
   const [pressSection, setPressSection] = useState({ title: "", description: "", brands: [] as string[] });
-
-  const tabs = ["Hero Секция", "Категории", "Новинки", "Эдиториал Образ", "Рассылка", "Пресса"];
 
   useEffect(() => {
     fetchData();
@@ -134,18 +132,28 @@ export default function HomePageEditor() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && uploadTarget) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (activeTab === "Hero Секция") {
-            updateSlide("imageUrl", reader.result as string);
-        } else if (activeTab === "Эдиториал Образ") {
-            setEditorialSection({ ...editorialSection, imageUrl: reader.result as string });
-            setHasChanges(true);
+        if (uploadTarget === "hero") {
+          updateSlide("imageUrl", reader.result as string);
+        } else if (uploadTarget === "editorial") {
+          setEditorialSection({ ...editorialSection, imageUrl: reader.result as string });
+          setHasChanges(true);
         }
       };
       reader.readAsDataURL(file);
     }
+    if (e.target) {
+      e.target.value = "";
+    }
+  };
+
+  const triggerUpload = (target: "hero" | "editorial") => {
+    setUploadTarget(target);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
   };
 
   if (fetching) {
@@ -157,182 +165,411 @@ export default function HomePageEditor() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5">Контент Главной</h1>
-          <p className="text-[13px] text-[#4f566b]">Управление визуалом и текстами вашего магазина в реальном времени.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={handleSave}
-            disabled={loading || !hasChanges}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 text-[12px] font-semibold rounded-lg transition-all border shadow-sm cursor-pointer",
-              hasChanges 
-                ? "text-white bg-slate-900 border-slate-900 hover:bg-slate-800" 
-                : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
-            )}
+    <>
+      {/* Toast / Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed top-8 right-8 z-[120] pointer-events-none"
           >
-            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Сохранить
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-6 overflow-x-auto w-full scrollbar-hide border-b border-[#e3e8ee] mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "pb-3 text-[13px] font-black transition-all relative whitespace-nowrap cursor-pointer",
-              activeTab === tab ? "text-slate-900" : "text-slate-400 hover:text-slate-900"
-            )}
+            <div className="min-w-[320px] p-4 rounded-lg shadow-2xl flex items-center gap-4 pointer-events-auto bg-[#1a1f36] text-white border border-white/10 backdrop-blur-xl">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[#10b981]">
+                <CheckCircle2 className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[14px] font-bold tracking-tight">Успешно</p>
+                <p className="text-[12px] text-white/70 font-medium">Изменения успешно сохранены</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        {errorMsg && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed top-8 right-8 z-[120] pointer-events-none"
           >
-            {tab}
-            {activeTab === tab && (
-              <motion.div 
-                layoutId="activeTabHome"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900"
-              />
-            )}
-          </button>
-        ))}
-      </div>
+            <div className="min-w-[320px] p-4 rounded-lg shadow-2xl flex items-center gap-4 pointer-events-auto bg-[#1a1f36] text-white border border-white/10 backdrop-blur-xl">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[#cd5c5c]">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[14px] font-bold tracking-tight">Ошибка</p>
+                <p className="text-[12px] text-white/70 font-medium">{errorMsg}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Tab Content */}
-      <div className="min-h-[400px]">
-        {activeTab === "Hero Секция" && (
-          <div className="space-y-6">
-             <div className="flex items-center justify-between px-1">
-                <h3 className="text-[11px] font-bold text-[#4f566b] uppercase tracking-widest">Список слайдов</h3>
-                <button 
-                  onClick={() => {
-                    setHeroSlides([...heroSlides, { titleFirst: "", titleSecond: "", titleThird: "", subtitle: "", primaryBtn: "", secondaryBtn: "", imageUrl: "" }]);
-                    setActiveSlideIdx(heroSlides.length);
-                    setHasChanges(true);
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-[#2c3b6e] hover:bg-[#2c3b6e]/5 rounded transition-all"
-                >
-                   <Plus className="w-3 h-3" /> Добавить
-                </button>
-             </div>
-             <div className="flex items-center gap-3 overflow-x-auto py-3 px-1 scrollbar-hide">
+      <div className="space-y-6 animate-in fade-in duration-700 pb-32 w-full">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5 font-black">Контент Главной</h1>
+            <p className="text-[13px] text-[#4f566b]">Управление визуалом и текстами вашего магазина в реальном времени.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleSave}
+              disabled={loading || !hasChanges}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-all border cursor-pointer",
+                hasChanges 
+                  ? "text-white bg-slate-900 border-slate-900 hover:bg-slate-800" 
+                  : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
+              )}
+            >
+              {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Сохранить
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-8 pt-4">
+          {/* Hero Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-[#f7f8f9] pb-4">
+              <div className="flex items-center gap-2 text-[#2c3b6e]">
+                <Layers className="w-5 h-5 text-slate-900" />
+                <h3 className="font-bold text-slate-900">Hero Секция (Слайдер)</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setHeroSlides([...heroSlides, { titleFirst: "", titleSecond: "", titleThird: "", subtitle: "", primaryBtn: "В магазин", secondaryBtn: "Лукбук", primaryBtnHref: "/shop", secondaryBtnHref: "/lookbook", imageUrl: "" }]);
+                  setActiveSlideIdx(heroSlides.length);
+                  setHasChanges(true);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-[#2c3b6e] hover:bg-[#2c3b6e]/5 border border-dashed border-[#2c3b6e]/30 rounded-lg transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" /> Добавить слайд
+              </button>
+            </div>
+
+            {/* Slides Thumbnails */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Выберите слайд для редактирования</span>
+              <div className="flex flex-wrap items-center gap-3 py-2">
                 {heroSlides.map((slide, idx) => (
-                  <div key={idx} onClick={() => setActiveSlideIdx(idx)} className={cn("flex-shrink-0 group relative w-16 h-16 rounded-xl border-2 transition-all cursor-pointer overflow-visible", activeSlideIdx === idx ? "border-[#2c3b6e] bg-white scale-110 z-10" : "border-transparent bg-[#f7f8f9] hover:border-[#e3e8ee] hover:scale-105")}>
-                     <div className="w-full h-full rounded-lg overflow-hidden">
-                        {slide.imageUrl ? <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon className="w-4 h-4" /></div>}
-                     </div>
+                  <div 
+                    key={idx} 
+                    onClick={() => setActiveSlideIdx(idx)} 
+                    className={cn(
+                      "flex-shrink-0 group relative w-16 h-16 rounded-xl border-2 transition-all cursor-pointer overflow-hidden", 
+                      activeSlideIdx === idx ? "border-[#2c3b6e] scale-105 shadow-md" : "border-transparent bg-[#f7f8f9] hover:border-[#e3e8ee]"
+                    )}
+                  >
+                    {slide.imageUrl ? (
+                      <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <ImageIcon className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                      #{idx + 1}
+                    </div>
                   </div>
                 ))}
-             </div>
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Наполнение #{activeSlideIdx + 1}</label>
-                    {heroSlides.length > 1 && (
-                      <button 
-                        onClick={() => setShowDeleteModal(true)}
-                        className="flex items-center gap-1.5 text-[10px] font-bold text-[#cd5c5c] hover:bg-[#cd5c5c]/5 px-2 py-1 rounded transition-all"
+              </div>
+            </div>
+
+            {/* Slide Editor Panel */}
+            {heroSlides[activeSlideIdx] && (
+              <div className="border border-[#e3e8ee]/60 rounded-xl p-5 bg-[#f7f8f9]/50 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#2c3b6e] uppercase tracking-widest">Параметры слайда #{activeSlideIdx + 1}</span>
+                  {heroSlides.length > 1 && (
+                    <button 
+                      onClick={() => setShowDeleteModal(true)}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-[#cd5c5c] hover:bg-[#cd5c5c]/5 px-2 py-1 rounded transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Удалить слайд
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-[#4f566b] uppercase tracking-widest">Надзаголовок (Third Line)</label>
+                      <input 
+                        type="text"
+                        placeholder="Например, Новая Коллекция 2026" 
+                        value={heroSlides[activeSlideIdx]?.titleThird || ""} 
+                        onChange={(e) => updateSlide("titleThird", e.target.value)} 
+                        className="w-full px-3 py-2 bg-white border border-[#e3e8ee] rounded-lg text-[13px] outline-none focus:border-[#2c3b6e]/30" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-[#4f566b] uppercase tracking-widest">Строка 1</label>
+                        <input 
+                          type="text"
+                          placeholder="Вневременной" 
+                          value={heroSlides[activeSlideIdx]?.titleFirst || ""} 
+                          onChange={(e) => updateSlide("titleFirst", e.target.value)} 
+                          className="w-full px-3 py-2 bg-white border border-[#e3e8ee] rounded-lg text-[13px] outline-none focus:border-[#2c3b6e]/30" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-[#4f566b] uppercase tracking-widest">Строка 2</label>
+                        <input 
+                          type="text"
+                          placeholder="Минимализм" 
+                          value={heroSlides[activeSlideIdx]?.titleSecond || ""} 
+                          onChange={(e) => updateSlide("titleSecond", e.target.value)} 
+                          className="w-full px-3 py-2 bg-white border border-[#e3e8ee] rounded-lg text-[13px] outline-none focus:border-[#2c3b6e]/30" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
+                      <textarea 
+                        rows={3} 
+                        placeholder="Краткое описание слайда..." 
+                        value={heroSlides[activeSlideIdx]?.subtitle || ""} 
+                        onChange={(e) => updateSlide("subtitle", e.target.value)} 
+                        className="w-full px-3 py-2 bg-white border border-[#e3e8ee] rounded-lg text-[13px] outline-none resize-none focus:border-[#2c3b6e]/30" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-[#4f566b] uppercase tracking-widest">Изображение слайда</label>
+                      <div 
+                        onClick={() => triggerUpload("hero")} 
+                        className="relative aspect-[16/9] bg-white border-2 border-dashed border-[#e3e8ee] rounded-xl overflow-hidden cursor-pointer flex items-center justify-center hover:border-slate-400 transition-all group"
                       >
-                        <Trash2 className="w-3 h-3" /> Удалить слайд
-                      </button>
-                    )}
+                        {heroSlides[activeSlideIdx]?.imageUrl ? (
+                          <img src={heroSlides[activeSlideIdx].imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Plus className="w-6 h-6 text-slate-300" />
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                          <span className="px-3 py-1.5 bg-white rounded-lg text-[10px] font-bold text-[#1a1f36] shadow-md">Выбрать фото</span>
+                        </div>
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder="Или прямая ссылка на фото" 
+                        value={heroSlides[activeSlideIdx]?.imageUrl || ""} 
+                        onChange={(e) => updateSlide("imageUrl", e.target.value)} 
+                        className="w-full px-3 py-2 bg-white border border-[#e3e8ee] rounded-lg text-[11px] text-slate-600 outline-none focus:border-[#2c3b6e]/30" 
+                      />
+                    </div>
                   </div>
-                  <input placeholder="Надзаголовок" value={heroSlides[activeSlideIdx]?.titleThird || ""} onChange={(e) => updateSlide("titleThird", e.target.value)} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <input placeholder="Строка 1" value={heroSlides[activeSlideIdx]?.titleFirst || ""} onChange={(e) => updateSlide("titleFirst", e.target.value)} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                    <input placeholder="Строка 2" value={heroSlides[activeSlideIdx]?.titleSecond || ""} onChange={(e) => updateSlide("titleSecond", e.target.value)} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                  </div>
-                  <textarea rows={4} placeholder="Описание" value={heroSlides[activeSlideIdx]?.subtitle || ""} onChange={(e) => updateSlide("subtitle", e.target.value)} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none resize-none" />
                 </div>
-                <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Изображение</label>
-                  <div onClick={() => fileInputRef.current?.click()} className="relative aspect-video bg-[#f7f8f9] border-2 border-dashed border-[#e3e8ee] rounded-xl overflow-hidden cursor-pointer flex items-center justify-center">
-                    {heroSlides[activeSlideIdx]?.imageUrl ? <img src={heroSlides[activeSlideIdx].imageUrl} alt="" className="w-full h-full object-cover" /> : <Plus className="w-6 h-6 text-slate-300" />}
-                  </div>
-                </div>
-             </div>
-          </div>
-        )}
 
-        {activeTab === "Категории" && (
-          <div className="bg-white border border-[#e3e8ee] rounded-xl p-8 max-w-2xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#f7f8f9] pb-4">
-               <Layers className="w-5 h-5 text-[#2c3b6e]" />
-               <h3 className="font-bold text-[#1a1f36]">Настройка блока «Наши Коллекции»</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[#e3e8ee]/40">
+                  <div className="p-3 bg-white rounded-lg border border-[#e3e8ee]/60 space-y-2">
+                    <span className="text-[9px] font-bold text-[#a3acb9] uppercase tracking-widest">Кнопка 1 (Основная)</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        placeholder="Текст (В магазин)" 
+                        value={heroSlides[activeSlideIdx]?.primaryBtn || ""} 
+                        onChange={(e) => updateSlide("primaryBtn", e.target.value)} 
+                        className="w-full px-2 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded text-[12px] outline-none" 
+                      />
+                      <input 
+                        placeholder="Ссылка (/shop)" 
+                        value={heroSlides[activeSlideIdx]?.primaryBtnHref || ""} 
+                        onChange={(e) => updateSlide("primaryBtnHref", e.target.value)} 
+                        className="w-full px-2 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded text-[12px] outline-none" 
+                      />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white rounded-lg border border-[#e3e8ee]/60 space-y-2">
+                    <span className="text-[9px] font-bold text-[#a3acb9] uppercase tracking-widest">Кнопка 2 (Вторичная)</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        placeholder="Текст (Лукбук)" 
+                        value={heroSlides[activeSlideIdx]?.secondaryBtn || ""} 
+                        onChange={(e) => updateSlide("secondaryBtn", e.target.value)} 
+                        className="w-full px-2 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded text-[12px] outline-none" 
+                      />
+                      <input 
+                        placeholder="Ссылка (/lookbook)" 
+                        value={heroSlides[activeSlideIdx]?.secondaryBtnHref || ""} 
+                        onChange={(e) => updateSlide("secondaryBtnHref", e.target.value)} 
+                        className="w-full px-2 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded text-[12px] outline-none" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Categories / Collections Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-4">
+              <Layers className="w-5 h-5 text-slate-900" />
+              <h3 className="font-bold text-slate-900">Блок «Наши Коллекции» (Категории)</h3>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
-                <input value={categoriesSection.title} onChange={(e) => { setCategoriesSection({ ...categoriesSection, title: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all" />
+                <input 
+                  type="text" 
+                  value={categoriesSection.title} 
+                  onChange={(e) => { setCategoriesSection({ ...categoriesSection, title: e.target.value }); setHasChanges(true); }} 
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
-                <textarea rows={4} value={categoriesSection.description} onChange={(e) => { setCategoriesSection({ ...categoriesSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all resize-none" />
+                <textarea 
+                  value={categoriesSection.description} 
+                  onChange={(e) => { setCategoriesSection({ ...categoriesSection, description: e.target.value }); setHasChanges(true); }} 
+                  rows={3}
+                  className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none"
+                />
               </div>
             </div>
-          </div>
-        )}
+          </section>
 
-        {activeTab === "Новинки" && (
-          <div className="bg-white border border-[#e3e8ee] rounded-xl p-8 max-w-2xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#f7f8f9] pb-4">
-               <ShoppingBag className="w-5 h-5 text-[#2c3b6e]" />
-               <h3 className="font-bold text-[#1a1f36]">Настройка блока «Новинки»</h3>
+          {/* New Arrivals Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-4">
+              <ShoppingBag className="w-5 h-5 text-slate-900" />
+              <h3 className="font-bold text-slate-900">Блок «Новинки»</h3>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
-                <input value={newArrivalsSection.title} onChange={(e) => { setNewArrivalsSection({ ...newArrivalsSection, title: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all" />
+                <input 
+                  type="text" 
+                  value={newArrivalsSection.title} 
+                  onChange={(e) => { setNewArrivalsSection({ ...newArrivalsSection, title: e.target.value }); setHasChanges(true); }} 
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
-                <textarea rows={4} value={newArrivalsSection.description} onChange={(e) => { setNewArrivalsSection({ ...newArrivalsSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all resize-none" />
+                <textarea 
+                  value={newArrivalsSection.description} 
+                  onChange={(e) => { setNewArrivalsSection({ ...newArrivalsSection, description: e.target.value }); setHasChanges(true); }} 
+                  rows={3}
+                  className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none"
+                />
               </div>
             </div>
-          </div>
-        )}
+          </section>
 
-        {activeTab === "Эдиториал Образ" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-             <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Текстовый контент</label>
-                <input placeholder="Надзаголовок (например, Эдиториал Образ)" value={editorialSection.overline} onChange={(e) => { setEditorialSection({ ...editorialSection, overline: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
-                <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Заголовок 1 (например, Искусство)" value={editorialSection.title1} onChange={(e) => { setEditorialSection({ ...editorialSection, title1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
-                  <input placeholder="Заголовок 2 (например, Простоты)" value={editorialSection.title2} onChange={(e) => { setEditorialSection({ ...editorialSection, title2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+          {/* Editorial Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-4">
+              <Newspaper className="w-5 h-5 text-slate-900" />
+              <h3 className="font-bold text-slate-900">Эдиториал Образ (Editorial)</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Надзаголовок</label>
+                  <input 
+                    type="text" 
+                    value={editorialSection.overline} 
+                    onChange={(e) => { setEditorialSection({ ...editorialSection, overline: e.target.value }); setHasChanges(true); }} 
+                    className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                  />
                 </div>
-                <textarea rows={4} placeholder="Описание" value={editorialSection.description} onChange={(e) => { setEditorialSection({ ...editorialSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none resize-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок 1</label>
+                    <input 
+                      type="text" 
+                      value={editorialSection.title1} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, title1: e.target.value }); setHasChanges(true); }} 
+                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок 2</label>
+                    <input 
+                      type="text" 
+                      value={editorialSection.title2} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, title2: e.target.value }); setHasChanges(true); }} 
+                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
+                  <textarea 
+                    value={editorialSection.description} 
+                    onChange={(e) => { setEditorialSection({ ...editorialSection, description: e.target.value }); setHasChanges(true); }} 
+                    rows={4}
+                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#f7f8f9]">
+                  <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Кнопка 1</label>
-                    <input placeholder="Текст (например, В магазин)" value={editorialSection.button1} onChange={(e) => { setEditorialSection({ ...editorialSection, button1: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
-                    <input placeholder="Ссылка (например, /shop)" value={editorialSection.button1Href} onChange={(e) => { setEditorialSection({ ...editorialSection, button1Href: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                    <input 
+                      placeholder="Текст (В магазин)" 
+                      value={editorialSection.button1} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, button1: e.target.value }); setHasChanges(true); }} 
+                      className="w-full px-2.5 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[12px] outline-none" 
+                    />
+                    <input 
+                      placeholder="Ссылка (/shop)" 
+                      value={editorialSection.button1Href} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, button1Href: e.target.value }); setHasChanges(true); }} 
+                      className="w-full px-2.5 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none" 
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Кнопка 2</label>
-                    <input placeholder="Текст (например, Лукбук)" value={editorialSection.button2} onChange={(e) => { setEditorialSection({ ...editorialSection, button2: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
-                    <input placeholder="Ссылка (например, /lookbook)" value={editorialSection.button2Href} onChange={(e) => { setEditorialSection({ ...editorialSection, button2Href: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white" />
+                    <input 
+                      placeholder="Текст (Лукбук)" 
+                      value={editorialSection.button2} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, button2: e.target.value }); setHasChanges(true); }} 
+                      className="w-full px-2.5 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[12px] outline-none" 
+                    />
+                    <input 
+                      placeholder="Ссылка (/lookbook)" 
+                      value={editorialSection.button2Href} 
+                      onChange={(e) => { setEditorialSection({ ...editorialSection, button2Href: e.target.value }); setHasChanges(true); }} 
+                      className="w-full px-2.5 py-1.5 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[11px] outline-none" 
+                    />
                   </div>
                 </div>
-             </div>
-             <div className="bg-white border border-[#e3e8ee] rounded-xl p-6 space-y-4">
-                <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest">Изображение Эдиториал</label>
-                <div onClick={() => fileInputRef.current?.click()} className="relative aspect-[4/5] bg-[#f7f8f9] border-2 border-dashed border-[#e3e8ee] rounded-xl overflow-hidden cursor-pointer flex items-center justify-center group">
-                  {editorialSection.imageUrl ? <img src={editorialSection.imageUrl} alt="" className="w-full h-full object-cover" /> : <Plus className="w-6 h-6 text-slate-300" />}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
-                    <span className="px-4 py-2 bg-white rounded-lg text-[11px] font-bold text-[#1a1f36]">Изменить</span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Изображение Эдиториал</label>
+                  <div 
+                    onClick={() => triggerUpload("editorial")} 
+                    className="relative aspect-[4/5] w-full bg-[#f7f8f9] border-2 border-dashed border-[#e3e8ee] rounded-xl overflow-hidden cursor-pointer flex items-center justify-center hover:border-slate-400 transition-all group"
+                  >
+                    {editorialSection.imageUrl ? (
+                      <img src={editorialSection.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Plus className="w-6 h-6 text-slate-300" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                      <span className="px-3 py-1.5 bg-white rounded-lg text-[10px] font-bold text-[#1a1f36] shadow-md">Выбрать фото</span>
+                    </div>
                   </div>
+                  <input 
+                    type="text" 
+                    placeholder="Или вставьте прямую ссылку на фото" 
+                    value={editorialSection.imageUrl} 
+                    onChange={(e) => { setEditorialSection({ ...editorialSection, imageUrl: e.target.value }); setHasChanges(true); }} 
+                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                  />
                 </div>
-                <input placeholder="Прямая ссылка на изображение" value={editorialSection.imageUrl} onChange={(e) => { setEditorialSection({ ...editorialSection, imageUrl: e.target.value }); setHasChanges(true); }} className="w-full px-3 py-2 bg-[#f7f8f9] border border-[#e3e8ee] rounded-lg text-[13px] outline-none" />
-                
-                {/* Presets Grid */}
+
                 <div className="space-y-2 pt-2">
-                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest">Все фото коллекции (Кликните для выбора)</label>
+                  <label className="text-[10px] font-black text-[#a3acb9] uppercase tracking-widest">Быстрый выбор (Пресеты)</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2040&auto=format&fit=crop",
@@ -353,79 +590,111 @@ export default function HomePageEditor() {
                     ))}
                   </div>
                 </div>
-             </div>
-          </div>
-        )}
-
-        {activeTab === "Рассылка" && (
-          <div className="bg-white border border-[#e3e8ee] rounded-xl p-8 max-w-2xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#f7f8f9] pb-4">
-               <Mail className="w-5 h-5 text-[#2c3b6e]" />
-               <h3 className="font-bold text-[#1a1f36]">Настройка блока рассылки</h3>
+              </div>
             </div>
-            <div className="space-y-4">
+          </section>
+
+          {/* Newsletter Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-4">
+              <Mail className="w-5 h-5 text-slate-900" />
+              <h3 className="font-bold text-slate-900">Блок рассылки (Newsletter)</h3>
+            </div>
+            <div className="grid gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
-                <input value={newsletterSection.title} onChange={(e) => { setNewsletterSection({ ...newsletterSection, title: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all" />
+                <input 
+                  type="text" 
+                  value={newsletterSection.title} 
+                  onChange={(e) => { setNewsletterSection({ ...newsletterSection, title: e.target.value }); setHasChanges(true); }} 
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
-                <textarea rows={4} value={newsletterSection.description} onChange={(e) => { setNewsletterSection({ ...newsletterSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all resize-none" />
+                <textarea 
+                  value={newsletterSection.description} 
+                  onChange={(e) => { setNewsletterSection({ ...newsletterSection, description: e.target.value }); setHasChanges(true); }} 
+                  rows={3}
+                  className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none"
+                />
               </div>
             </div>
-          </div>
-        )}
+          </section>
 
-        {activeTab === "Пресса" && (
-          <div className="bg-white border border-[#e3e8ee] rounded-xl p-8 space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#f7f8f9] pb-4">
-               <Newspaper className="w-5 h-5 text-[#2c3b6e]" />
-               <h3 className="font-bold text-[#1a1f36]">Блок «О нас пишут»</h3>
+          {/* Press Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-4">
+              <Newspaper className="w-5 h-5 text-slate-900" />
+              <h3 className="font-bold text-slate-900">Блок «О нас пишут» (Пресса)</h3>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
-                    <input value={pressSection.title} onChange={(e) => { setPressSection({ ...pressSection, title: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
-                    <textarea rows={4} value={pressSection.description} onChange={(e) => { setPressSection({ ...pressSection, description: e.target.value }); setHasChanges(true); }} className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all resize-none" />
-                  </div>
-               </div>
-               <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
+                  <input 
+                    type="text" 
+                    value={pressSection.title} 
+                    onChange={(e) => { setPressSection({ ...pressSection, title: e.target.value }); setHasChanges(true); }} 
+                    className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
+                  <textarea 
+                    value={pressSection.description} 
+                    onChange={(e) => { setPressSection({ ...pressSection, description: e.target.value }); setHasChanges(true); }} 
+                    rows={3}
+                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Список изданий (через запятую)</label>
                   <textarea 
                     rows={4} 
                     value={pressSection.brands.join(", ")} 
                     onChange={(e) => { setPressSection({ ...pressSection, brands: e.target.value.split(",").map(s => s.trim()).filter(s => s) }); setHasChanges(true); }} 
-                    className="w-full px-4 py-3 bg-[#f7f8f9] border border-[#e3e8ee] rounded-xl text-[14px] outline-none focus:border-[#2c3b6e] transition-all resize-none" 
+                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3.5 py-2.5 rounded-xl outline-none transition-all resize-none" 
                     placeholder="VOGUE, ELLE, GQ..."
                   />
-                  <div className="flex flex-wrap gap-2 pt-2">
-                     {pressSection.brands.map((brand, i) => (
-                       <span key={i} className="px-3 py-1 bg-[#2c3b6e]/5 text-[#2c3b6e] text-[10px] font-bold uppercase tracking-widest rounded-full">{brand}</span>
-                     ))}
-                  </div>
-               </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {pressSection.brands.map((brand, i) => (
+                    <span key={i} className="px-3 py-1 bg-[#2c3b6e]/5 text-[#2c3b6e] text-[10px] font-bold uppercase tracking-widest rounded-full">
+                      {brand}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          </section>
+        </div>
+
+        {/* Floating Save Button */}
+        <AnimatePresence>
+          {hasChanges && (
+            <motion.div 
+              initial={{ y: 100, x: "-50%" }}
+              animate={{ y: 0, x: "-50%" }}
+              exit={{ y: 100, x: "-50%" }}
+              className="fixed bottom-6 left-1/2 z-50"
+            >
+              <button 
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-[#2c3b6e] text-white px-6 py-3 rounded-full border border-[#2c3b6e] hover:bg-[#232f58] shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 font-bold text-[13px] group cursor-pointer"
+              >
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                Сохранить изменения
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
       </div>
-
-      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-
-      {/* Notifications */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[10001]">
-             <div className="flex items-center gap-3 px-6 py-3 bg-[#1a1f36] text-white rounded-2xl shadow-2xl border border-white/10 backdrop-blur-md">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></div>
-                <span className="text-[13px] font-bold tracking-tight">Изменения успешно сохранены!</span>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Custom Delete Modal (Quiet Luxury Style) */}
       <AnimatePresence>
@@ -455,13 +724,13 @@ export default function HomePageEditor() {
                    <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setShowDeleteModal(false)}
-                        className="flex-1 py-4 bg-white text-[#1a1f36] border border-[#e3e8ee] rounded-2xl font-bold text-[14px] hover:bg-[#f7f8f9] transition-all"
+                        className="flex-1 py-4 bg-white text-[#1a1f36] border border-[#e3e8ee] rounded-2xl font-bold text-[14px] hover:bg-[#f7f8f9] transition-all cursor-pointer"
                       >
                         Отмена
                       </button>
                       <button 
                         onClick={handleDeleteSlide}
-                        className="flex-1 py-4 bg-[#cd5c5c] text-white rounded-2xl font-bold text-[14px] hover:bg-[#b04b4b] transition-all shadow-lg shadow-[#cd5c5c]/10"
+                        className="flex-1 py-4 bg-[#cd5c5c] text-white rounded-2xl font-bold text-[14px] hover:bg-[#b04b4b] transition-all shadow-lg shadow-[#cd5c5c]/10 cursor-pointer"
                       >
                         Да, удалить
                       </button>
@@ -471,6 +740,6 @@ export default function HomePageEditor() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

@@ -55,7 +55,7 @@ export default function MenCategoryPage() {
         
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="mb-16">
-            <nav className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-8">
+            <nav className="flex items-center gap-2 text-[11px] md:text-[13px] tracking-wide text-slate-400 mb-8">
               <Link href="/" className="hover:text-brand-blue transition-colors">Главная</Link>
               <span>/</span>
               <span className="text-brand-blue font-bold">Мужчины</span>
@@ -178,7 +178,7 @@ export default function MenCategoryPage() {
                         <div>
                           <Link href={`/product/${(product as any).sku ? `${formatSkuForUrl((product as any).sku)}-` : ''}${product.id}`}>
                             <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">{product.category}</p>
-                            <h3 className="text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-500 transition-colors">{product.name}</h3>
+                            <h3 className="text-sm font-bold text-brand-blue tracking-tight group-hover:text-slate-500 transition-colors">{product.name}</h3>
                           </Link>
                           <p className="mt-1 text-sm text-slate-500 font-medium">{product.price}</p>
                         </div>

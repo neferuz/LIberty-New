@@ -114,7 +114,11 @@ def read_page_content(
                     "title": "Создано для жизни. Спроектировано для вечности."
                 },
                 "cta": {
-                    "title": "Начните свою историю с нами."
+                    "title": "Начните свою историю с нами.",
+                    "button1Text": "Магазин",
+                    "button1Href": "/shop",
+                    "button2Text": "Лукбук",
+                    "button2Href": "/lookbook"
                 }
             }
             content = models.PageContent(page_name="about", data=default_data)

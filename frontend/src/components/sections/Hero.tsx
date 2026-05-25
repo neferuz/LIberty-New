@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/common/Button";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
@@ -31,6 +32,50 @@ export const Hero = () => {
   const [slides, setSlides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
+  const [isUz, setIsUz] = useState(false);
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+    const cookieVal = getCookie("googtrans");
+    if (cookieVal && cookieVal.includes("/uz")) {
+      setIsUz(true);
+    }
+  }, []);
+
+  const translateText = (text: string | undefined): string => {
+    if (!text) return "";
+    if (!isUz) return text;
+    
+    const dict: Record<string, string> = {
+      // Slide 1
+      "Вневременной": "Mangu",
+      "Минимализм": "Minimalizm",
+      "Новая Коллекция 2026": "Yangi Kolleksiya 2026",
+      "Откройте для себя нашу кураторскую коллекцию архитектурных силуэтов и премиальных тканей.": "Arxitekturaviy siluetlar va premium matolardan iborat maxsus kolleksiyamizni kashf eting.",
+      "В магазин": "Do'konga",
+      "Лукбук": "Lukbuk",
+      
+      // Slide 2
+      "Эссенциальные": "Asosiy",
+      "Слои": "Qatlamlar",
+      "Эдиториал Образ": "Editorial Ko'rinish",
+      "Продуманные вещи, которые плавно переходят из сезона в сезон.": "Fasldan faslga silliq o'tadigan puxta o'ylangan kiyimlar.",
+      
+      // Slide 3
+      "Искусство": "San'ati",
+      "Простоты": "Oddiylik",
+      "Премиальная Одежда": "Premium Kiyimlar",
+      "Исключительное мастерство встречается с современным дизайном для современного человека.": "Zamonaviy inson uchun ajoyib mahorat zamonaviy dizayn bilan uyg'unlashadi."
+    };
+    
+    return dict[text.trim()] || text;
+  };
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -148,25 +193,28 @@ export const Hero = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 {content.titleThird && (
-                  <span className="inline-block px-3 py-1 rounded-none bg-slate-50 border border-slate-100 text-[9px] font-bold tracking-[0.2em] uppercase mb-3 md:mb-4 text-brand-blue">
-                    {content.titleThird}
+                  <span className="inline-block px-3 py-1 rounded-none bg-slate-50 border border-slate-100 text-[9px] font-bold tracking-[0.2em] uppercase mb-3 md:mb-4 text-brand-blue" translate="no">
+                    {translateText(content.titleThird)}
                   </span>
                 )}
-                <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tighter text-brand-blue leading-[0.95] mb-3 md:mb-6 whitespace-pre-line">
-                  {content.titleFirst} <br />
-                  {content.titleSecond}
+                <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tighter text-brand-blue leading-[0.95] mb-3 md:mb-6 whitespace-pre-line" translate="no">
+                  {translateText(content.titleFirst)} <br />
+                  {translateText(content.titleSecond)}
                 </h1>
-                <p className="hidden sm:block text-sm md:text-base text-slate-500 leading-relaxed max-w-md mb-4 md:mb-6">
-                  {content.subtitle}
+                <p className="hidden sm:block text-sm md:text-base text-slate-500 leading-relaxed max-w-md mb-4 md:mb-6" translate="no">
+                  {translateText(content.subtitle)}
                 </p>
-                <div className="flex flex-row gap-2 md:gap-4 mt-2 md:mt-0">
-                  <Button size="lg" className="flex-1 group px-4 md:px-10 rounded-none text-[12px] md:text-base h-10 md:h-12">
-                    {content.primaryBtn}
-                    <ArrowRight className="ml-1.5 w-3 h-3 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                  <Button variant="outline" size="lg" className="flex-1 px-4 md:px-10 rounded-none text-[12px] md:text-base h-10 md:h-12">
-                    {content.secondaryBtn}
-                  </Button>
+                <div className="flex flex-row gap-2 md:gap-4 mt-2 md:mt-0 w-full">
+                  <Link href={content.primaryBtnHref || "/shop"} className="flex-1">
+                    <Button size="lg" className="w-full group px-4 md:px-10 rounded-none text-[12px] md:text-base h-10 md:h-12" translate="no">
+                      {translateText(content.primaryBtn)}
+                    </Button>
+                  </Link>
+                  <Link href={content.secondaryBtnHref || "/lookbook"} className="flex-1">
+                    <Button variant="outline" size="lg" className="w-full px-4 md:px-10 rounded-none text-[12px] md:text-base h-10 md:h-12" translate="no">
+                      {translateText(content.secondaryBtn)}
+                    </Button>
+                  </Link>
                 </div>
               </motion.div>
             </AnimatePresence>

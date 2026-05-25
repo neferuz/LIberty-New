@@ -188,7 +188,7 @@ export const Products = () => {
                 <div className="min-w-0 flex-1 pr-2">
                   <Link href={`/product/${product.sku ? `${formatSkuForUrl(product.sku)}-` : ''}${product.id}`}>
                     <p className="text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest mb-0.5 truncate">{product.category}</p>
-                    <h3 className="text-[11px] md:text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-400 transition-colors truncate">{product.name}</h3>
+                    <h3 className="text-[11px] md:text-sm font-bold text-brand-blue tracking-tight group-hover:text-slate-400 transition-colors truncate">{product.name}</h3>
                   </Link>
                   <p className="mt-0.5 md:mt-1 text-xs md:text-sm text-slate-500 font-medium">
                     {product.price.toLocaleString('ru-RU')} сум

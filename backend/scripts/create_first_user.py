@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.session import SessionLocal, engine, Base
 from app.models.user import User
+from app.models.page_content import PageContent
 from app.core.security import get_password_hash
 
 def create_user():
@@ -29,9 +30,9 @@ def create_user():
     db.close()
 
     # Create home page content
-    home_content = db.query(models.PageContent).filter(models.PageContent.page_name == "home").first()
+    home_content = db.query(PageContent).filter(PageContent.page_name == "home").first()
     if not home_content:
-        home_content = models.PageContent(
+        home_content = PageContent(
             page_name="home",
             data={
                 "hero": {

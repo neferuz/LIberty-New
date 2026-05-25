@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Save, 
   RefreshCw,
@@ -11,7 +11,8 @@ import {
   AlignLeft,
   Info,
   BarChart3,
-  Award
+  Award,
+  Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ interface AboutData {
     title: string;
     description: string;
     stats: { value: string; label: string }[];
+    imageUrl?: string;
   };
   craftsmanship: {
     overline: string;
@@ -34,9 +36,14 @@ interface AboutData {
   };
   visualStory: {
     title: string;
+    imageUrl?: string;
   };
   cta: {
     title: string;
+    button1Text?: string;
+    button1Href?: string;
+    button2Text?: string;
+    button2Href?: string;
   };
 }
 
@@ -46,6 +53,30 @@ export default function AboutAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTarget, setUploadTarget] = useState<"philosophy" | "visualStory" | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && uploadTarget) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (uploadTarget === "philosophy") {
+          updateField("philosophy.imageUrl", reader.result as string);
+        } else if (uploadTarget === "visualStory") {
+          updateField("visualStory.imageUrl", reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerUpload = (target: "philosophy" | "visualStory") => {
+    setUploadTarget(target);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
+  };
 
   const hasUnsavedChanges = JSON.stringify(aboutData) !== JSON.stringify(initialAboutData);
 
@@ -214,21 +245,21 @@ export default function AboutAdminPage() {
         </AnimatePresence>
       </div>
 
-      <div className="space-y-6 animate-in fade-in duration-700 pb-32 w-full">
+      <div className="space-y-4 animate-in fade-in duration-700 pb-16 w-full">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5">О бренде (About)</h1>
-            <p className="text-[13px] text-[#4f566b]">Управление контентом страницы "О нас".</p>
+            <h1 className="text-xl font-bold text-[#1a1f36] tracking-tight mb-0.5 font-black">О бренде (About)</h1>
+            <p className="text-[13px] text-[#4f566b]">Управление контентом страницы "О нас" в реальном времени.</p>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={handleSave}
               disabled={saving || !hasUnsavedChanges}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-all border",
+                "flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-all border cursor-pointer",
                 hasUnsavedChanges 
-                  ? "text-white bg-[#2c3b6e] border-[#2c3b6e] hover:bg-[#232f58]" 
+                  ? "text-white bg-slate-900 border-slate-900 hover:bg-slate-800" 
                   : "text-[#a3acb9] bg-[#f7f8f9] border-[#e3e8ee] cursor-not-allowed"
               )}
             >
@@ -238,94 +269,95 @@ export default function AboutAdminPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            {/* Hero Section */}
-            <section className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
-              <div className="flex items-center gap-2 text-[#2c3b6e] mb-2">
-                <Layout className="w-4 h-4" />
-                <h2 className="text-[15px] font-bold uppercase tracking-wider">Главный экран</h2>
+        <div className="space-y-4 pt-1">
+          {/* Hero Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-lg p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-3">
+              <Layout className="w-4 h-4 text-slate-900" strokeWidth={2.5} />
+              <h3 className="font-bold text-[14px] text-slate-900">Главный экран</h3>
+            </div>
+            <div className="grid gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Заголовок (Title)</label>
+                <input 
+                  type="text" 
+                  value={aboutData.hero.title}
+                  onChange={(e) => updateField('hero.title', e.target.value)}
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all"
+                />
               </div>
-              <div className="grid gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок (Title)</label>
-                  <input 
-                    type="text" 
-                    value={aboutData.hero.title}
-                    onChange={(e) => updateField('hero.title', e.target.value)}
-                    className="w-full text-[14px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Подзаголовок (Subtitle)</label>
-                  <textarea 
-                    value={aboutData.hero.subtitle}
-                    onChange={(e) => updateField('hero.subtitle', e.target.value)}
-                    rows={2}
-                    className="w-full text-[14px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all resize-none"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Подзаголовок (Subtitle)</label>
+                <textarea 
+                  value={aboutData.hero.subtitle}
+                  onChange={(e) => updateField('hero.subtitle', e.target.value)}
+                  rows={2}
+                  className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all resize-none"
+                />
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Philosophy Section */}
-            <section className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
-              <div className="flex items-center gap-2 text-[#2c3b6e] mb-2">
-                <Info className="w-4 h-4" />
-                <h2 className="text-[15px] font-bold uppercase tracking-wider">Наша философия</h2>
-              </div>
-              <div className="grid gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Надзаголовок</label>
+          {/* Philosophy Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-lg p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-3">
+              <Info className="w-4 h-4 text-slate-900" strokeWidth={2.5} />
+              <h3 className="font-bold text-[14px] text-slate-900">Наша философия</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Left Column: Texts and Stats */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Надзаголовок</label>
                     <input 
                       type="text" 
                       value={aboutData.philosophy.overline}
                       onChange={(e) => updateField('philosophy.overline', e.target.value)}
-                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all"
+                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Заголовок</label>
                     <input 
                       type="text" 
                       value={aboutData.philosophy.title}
                       onChange={(e) => updateField('philosophy.title', e.target.value)}
-                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all"
+                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all"
                     />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Описание</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Описание</label>
                   <textarea 
                     value={aboutData.philosophy.description}
                     onChange={(e) => updateField('philosophy.description', e.target.value)}
                     rows={3}
-                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all resize-none"
+                    className="w-full text-[13px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all resize-none"
                   />
                 </div>
                 
                 {/* Stats */}
-                <div className="pt-4 border-t border-slate-50">
-                  <div className="flex items-center gap-2 text-[#4f566b] mb-4">
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold uppercase tracking-widest">Показатели (Stats)</span>
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 text-[#4f566b] mb-2">
+                    <BarChart3 className="w-3.5 h-3.5 text-slate-900" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-[#4f566b]">Показатели (Stats)</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-2">
                     {aboutData.philosophy.stats.map((stat, idx) => (
-                      <div key={idx} className="space-y-2 p-3 bg-[#f7f8f9] rounded-lg">
+                      <div key={idx} className="space-y-1 p-1.5 bg-[#f7f8f9] rounded-lg border border-[#e3e8ee]/45">
                         <input 
                           type="text" 
                           value={stat.value}
                           onChange={(e) => updateStat(idx, 'value', e.target.value)}
-                          className="w-full text-[16px] font-bold text-[#2c3b6e] bg-transparent outline-none text-center"
+                          className="w-full text-[13px] font-black text-[#2c3b6e] bg-transparent outline-none text-center"
                           placeholder="Значение"
                         />
                         <input 
                           type="text" 
                           value={stat.label}
                           onChange={(e) => updateStat(idx, 'label', e.target.value)}
-                          className="w-full text-[10px] font-bold text-[#4f566b] bg-transparent outline-none text-center uppercase tracking-widest"
+                          className="w-full text-[9px] font-bold text-[#4f566b] bg-transparent outline-none text-center uppercase tracking-wider"
                           placeholder="Ярлык"
                         />
                       </div>
@@ -333,95 +365,190 @@ export default function AboutAdminPage() {
                   </div>
                 </div>
               </div>
-            </section>
-          </div>
 
-          <div className="space-y-6">
-            {/* Craftsmanship Section */}
-            <section className="bg-white border border-[#e3e8ee] rounded-lg p-6 h-full flex flex-col">
-              <div className="flex items-center gap-2 text-[#2c3b6e] mb-4">
-                <Award className="w-4 h-4" />
-                <h2 className="text-[15px] font-bold uppercase tracking-wider">Мастерство (Craftsmanship)</h2>
-              </div>
-              <div className="space-y-4 flex-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Надзаголовок</label>
-                    <input 
-                      type="text" 
-                      value={aboutData.craftsmanship.overline}
-                      onChange={(e) => updateField('craftsmanship.overline', e.target.value)}
-                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all"
-                    />
+              {/* Right Column: Image */}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Изображение философии</label>
+                  <div 
+                    onClick={() => triggerUpload("philosophy")}
+                    className="relative h-32 w-full bg-[#f7f8f9] border border-dashed border-[#e3e8ee] rounded-md overflow-hidden cursor-pointer flex items-center justify-center hover:border-slate-400 transition-all group"
+                  >
+                    {aboutData.philosophy.imageUrl ? (
+                      <img src={aboutData.philosophy.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Plus className="w-5 h-5 text-slate-300" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                      <span className="px-3 py-1 bg-white rounded text-[10px] font-bold text-[#1a1f36] shadow">Выбрать фото</span>
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок</label>
-                    <input 
-                      type="text" 
-                      value={aboutData.craftsmanship.title}
-                      onChange={(e) => updateField('craftsmanship.title', e.target.value)}
-                      className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all"
-                    />
-                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Или вставьте прямую ссылку на фото" 
+                    value={aboutData.philosophy.imageUrl || ""}
+                    onChange={(e) => updateField('philosophy.imageUrl', e.target.value)}
+                    className="w-full text-[11px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1 rounded-md outline-none transition-all"
+                  />
                 </div>
-                
-                {/* Cards */}
-                <div className="grid gap-3 pt-2">
-                  {aboutData.craftsmanship.cards.map((card, idx) => (
-                    <div key={idx} className="p-4 border border-[#e3e8ee] rounded-xl space-y-3">
+              </div>
+            </div>
+          </section>
+
+          {/* Craftsmanship Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-lg p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-3">
+              <Award className="w-4 h-4 text-slate-900" strokeWidth={2.5} />
+              <h3 className="font-bold text-[14px] text-slate-900">Мастерство (Craftsmanship)</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Надзаголовок</label>
+                  <input 
+                    type="text" 
+                    value={aboutData.craftsmanship.overline}
+                    onChange={(e) => updateField('craftsmanship.overline', e.target.value)}
+                    className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Заголовок</label>
+                  <input 
+                    type="text" 
+                    value={aboutData.craftsmanship.title}
+                    onChange={(e) => updateField('craftsmanship.title', e.target.value)}
+                    className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all"
+                  />
+                </div>
+              </div>
+              
+              {/* Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {aboutData.craftsmanship.cards.map((card, idx) => (
+                  <div key={idx} className="p-3 bg-[#f7f8f9] rounded-lg space-y-2 border border-[#e3e8ee]/50">
+                    <div className="space-y-0.5">
+                      <label className="text-[9px] font-black text-[#a3acb9] uppercase tracking-widest px-0.5">Карточка {idx + 1}</label>
                       <input 
                         type="text" 
                         value={card.title}
                         onChange={(e) => updateCard(idx, 'title', e.target.value)}
-                        className="w-full text-[13px] font-bold text-[#1a1f36] bg-transparent outline-none border-b border-transparent focus:border-[#2c3b6e]/30"
+                        className="w-full text-[12px] font-bold text-[#1a1f36] bg-white border border-[#e3e8ee] px-2 py-1 rounded outline-none focus:border-[#2c3b6e]/30 transition-all text-xs font-semibold"
                         placeholder="Заголовок карточки"
                       />
+                    </div>
+                    <div className="space-y-0.5">
                       <textarea 
                         value={card.desc}
                         onChange={(e) => updateCard(idx, 'desc', e.target.value)}
-                        rows={2}
-                        className="w-full text-[12px] text-[#4f566b] bg-transparent outline-none resize-none"
+                        rows={3}
+                        className="w-full text-[11px] font-medium text-[#4f566b] bg-white border border-[#e3e8ee] px-2 py-1 rounded outline-none focus:border-[#2c3b6e]/30 transition-all resize-none text-[11px]"
                         placeholder="Описание карточки"
                       />
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            </section>
-          </div>
-        </div>
-
-        {/* Other Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <section className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
-            <div className="flex items-center gap-2 text-[#2c3b6e] mb-2">
-              <AlignLeft className="w-4 h-4" />
-              <h2 className="text-[13px] font-bold uppercase tracking-wider">Visual Story</h2>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Текст на фото</label>
-              <textarea 
-                value={aboutData.visualStory.title}
-                onChange={(e) => updateField('visualStory.title', e.target.value)}
-                rows={2}
-                className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all resize-none"
-              />
             </div>
           </section>
 
-          <section className="bg-white border border-[#e3e8ee] rounded-lg p-6 space-y-4">
-            <div className="flex items-center gap-2 text-[#2c3b6e] mb-2">
-              <Type className="w-4 h-4" />
-              <h2 className="text-[13px] font-bold uppercase tracking-wider">CTA Section</h2>
+          {/* Visual Story */}
+          <section className="bg-white border border-[#e3e8ee] rounded-lg p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-3">
+              <AlignLeft className="w-4 h-4 text-slate-900" strokeWidth={2.5} />
+              <h3 className="font-bold text-[14px] text-slate-900">Visual Story</h3>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Заголовок призыва</label>
-              <textarea 
-                value={aboutData.cta.title}
-                onChange={(e) => updateField('cta.title', e.target.value)}
-                rows={2}
-                className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-3 py-2 rounded-lg outline-none transition-all resize-none"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Текст на фото</label>
+                <textarea 
+                  value={aboutData.visualStory.title}
+                  onChange={(e) => updateField('visualStory.title', e.target.value)}
+                  rows={4}
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all resize-none"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Фоновое изображение</label>
+                <div 
+                  onClick={() => triggerUpload("visualStory")}
+                  className="relative h-32 w-full bg-[#f7f8f9] border border-dashed border-[#e3e8ee] rounded-md overflow-hidden cursor-pointer flex items-center justify-center hover:border-slate-400 transition-all group"
+                >
+                  {aboutData.visualStory.imageUrl ? (
+                    <img src={aboutData.visualStory.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-slate-300" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                    <span className="px-3 py-1 bg-white rounded text-[10px] font-bold text-[#1a1f36] shadow">Выбрать фото</span>
+                  </div>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Или вставьте прямую ссылку на фото" 
+                  value={aboutData.visualStory.imageUrl || ""}
+                  onChange={(e) => updateField('visualStory.imageUrl', e.target.value)}
+                  className="w-full text-[11px] font-medium text-[#4f566b] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1 rounded-md outline-none transition-all"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* CTA Section */}
+          <section className="bg-white border border-[#e3e8ee] rounded-lg p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-[#2c3b6e] border-b border-[#f7f8f9] pb-3">
+              <Type className="w-4 h-4 text-slate-900" strokeWidth={2.5} />
+              <h3 className="font-bold text-[14px] text-slate-900">Призыв к действию (CTA)</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-[#4f566b] uppercase tracking-wider">Заголовок призыва</label>
+                <textarea 
+                  value={aboutData.cta.title}
+                  onChange={(e) => updateField('cta.title', e.target.value)}
+                  rows={2}
+                  className="w-full text-[13px] font-medium text-[#1a1f36] bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white px-2.5 py-1.5 rounded-md outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2 p-2 bg-[#f7f8f9] rounded-lg border border-[#e3e8ee]/40 flex flex-col justify-center">
+                  <span className="text-[9px] font-black text-[#a3acb9] uppercase tracking-wider px-0.5">Кнопка 1</span>
+                  <div className="space-y-1.5">
+                    <input 
+                      placeholder="Текст (Магазин)" 
+                      value={aboutData.cta.button1Text || ""} 
+                      onChange={(e) => updateField('cta.button1Text', e.target.value)} 
+                      className="w-full px-2 py-1 bg-white border border-[#e3e8ee] rounded text-[12px] outline-none focus:border-[#2c3b6e]/30" 
+                    />
+                    <input 
+                      placeholder="Ссылка (/shop)" 
+                      value={aboutData.cta.button1Href || ""} 
+                      onChange={(e) => updateField('cta.button1Href', e.target.value)} 
+                      className="w-full px-2 py-1 bg-white border border-[#e3e8ee] rounded text-[12px] outline-none focus:border-[#2c3b6e]/30" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 p-2 bg-[#f7f8f9] rounded-lg border border-[#e3e8ee]/40 flex flex-col justify-center">
+                  <span className="text-[9px] font-black text-[#a3acb9] uppercase tracking-wider px-0.5">Кнопка 2</span>
+                  <div className="space-y-1.5">
+                    <input 
+                      placeholder="Текст (Лукбук)" 
+                      value={aboutData.cta.button2Text || ""} 
+                      onChange={(e) => updateField('cta.button2Text', e.target.value)} 
+                      className="w-full px-2 py-1 bg-white border border-[#e3e8ee] rounded text-[12px] outline-none focus:border-[#2c3b6e]/30" 
+                    />
+                    <input 
+                      placeholder="Ссылка (/lookbook)" 
+                      value={aboutData.cta.button2Href || ""} 
+                      onChange={(e) => updateField('cta.button2Href', e.target.value)} 
+                      className="w-full px-2 py-1 bg-white border border-[#e3e8ee] rounded text-[12px] outline-none focus:border-[#2c3b6e]/30" 
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         </div>
@@ -438,7 +565,7 @@ export default function AboutAdminPage() {
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#2c3b6e] text-white px-6 py-3 rounded-full border border-[#2c3b6e] hover:bg-[#232f58] shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 font-bold text-[13px] group"
+                className="bg-[#2c3b6e] text-white px-6 py-3 rounded-full border border-[#2c3b6e] hover:bg-[#232f58] shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 font-bold text-[13px] group cursor-pointer"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />}
                 Сохранить изменения
@@ -446,6 +573,8 @@ export default function AboutAdminPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        
+        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
       </div>
     </>
   );

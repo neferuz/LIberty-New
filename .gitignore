@@ -33,3 +33,17 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+

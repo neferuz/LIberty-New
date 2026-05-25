@@ -101,9 +101,8 @@ export const Header = () => {
     if (newLang === "UZ") {
       setCookie("googtrans", "/ru/uz");
     } else {
-      // Force Russian explicitly to override and then perform clean deletion
+      // Force Russian explicitly to override
       setCookie("googtrans", "/ru/ru");
-      deleteCookie("googtrans");
     }
 
     setCurrentLang(newLang);

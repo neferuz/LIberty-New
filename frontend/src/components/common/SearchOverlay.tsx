@@ -166,7 +166,7 @@ export const SearchOverlay = () => {
                       </div>
                       <div>
                         <p className="text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest mb-0.5 truncate">{product.category}</p>
-                        <h4 className="text-xs md:text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-500 transition-colors truncate">{product.name}</h4>
+                        <h4 className="text-xs md:text-sm font-bold text-brand-blue tracking-tight group-hover:text-slate-500 transition-colors truncate">{product.name}</h4>
                         <p className="mt-0.5 md:mt-1 text-xs md:text-sm text-slate-500">{product.price.toLocaleString('ru-RU')} сум</p>
                       </div>
                     </Link>

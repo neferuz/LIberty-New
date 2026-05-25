@@ -123,11 +123,11 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
         )}
       </AnimatePresence>
 
-      <main className="pt-12 md:pt-20 pb-16 relative overflow-hidden">
+      <main className="pt-16 md:pt-24 pb-10 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           {/* Breadcrumbs */}
-          <nav className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-3 md:mb-6">
+          <nav className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] md:text-[12px] tracking-wide text-slate-400 mb-2 md:mb-4">
             <Link href="/" className="hover:text-brand-blue transition-colors">Главная</Link>
             <ChevronRight className="w-3 h-3 opacity-50" />
             <Link href="/shop" className="hover:text-brand-blue transition-colors">Магазин</Link>
@@ -135,9 +135,9 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
             <span className="text-brand-blue font-bold truncate max-w-[150px]">{product.name}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
             {/* Product Images */}
-            <div className="lg:col-span-7 space-y-3 md:space-y-5 relative">
+            <div className="lg:col-span-7 space-y-2.5 md:space-y-3 relative">
               <motion.div 
                 key={selectedImage}
                 initial={{ opacity: 0 }}
@@ -185,15 +185,15 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
             </div>
 
             {/* Product Info */}
-            <div className="lg:col-span-5 lg:sticky lg:top-24 h-fit">
+            <div className="lg:col-span-5 lg:sticky lg:top-16 h-fit">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-4 md:space-y-5"
+                className="space-y-3.5 md:space-y-4"
               >
                 <div>
-                  <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-slate-400 block mb-1.5 md:mb-2">{product.category}</span>
-                  <h1 className="text-xl md:text-4xl font-bold tracking-tighter text-brand-blue uppercase leading-[0.95] mb-3 md:mb-4">
+                  <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-slate-400 block mb-1 md:mb-1.5">{product.category}</span>
+                  <h1 className="text-xl md:text-4xl font-bold tracking-tight text-brand-blue leading-[0.95] mb-2 md:mb-3">
                     {product.name}
                   </h1>
                   <p className="text-lg md:text-xl font-medium text-slate-600 tracking-tight">
@@ -203,8 +203,8 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
                 </div>
 
                 {product.description && (
-                  <div className="pt-4 md:pt-5 border-t border-slate-100">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 text-brand-blue">Описание</h4>
+                  <div className="pt-3 md:pt-3.5 border-t border-slate-100">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5 text-brand-blue">Описание</h4>
                     <div className="text-slate-500 leading-relaxed text-xs md:text-sm max-w-md">
                       <p>{product.description}</p>
                     </div>
@@ -212,8 +212,8 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
                 )}
                 
                 {product.characteristics && Object.keys(product.characteristics).length > 0 && (
-                  <div className="pt-4 md:pt-5 border-t border-slate-100/60">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2.5 text-brand-blue">Характеристики</h4>
+                  <div className="pt-3 md:pt-3.5 border-t border-slate-100/60">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5 text-brand-blue">Характеристики</h4>
                     <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs md:text-sm text-slate-600">
                       {Object.entries(product.characteristics).map(([key, val]: [string, any]) => (
                         <div key={key} className="contents">
@@ -227,7 +227,7 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
 
                 {/* Color Selector */}
                 {product.variants && product.variants.length > 0 && (
-                  <div className="space-y-2 pt-4 md:pt-5 border-t border-slate-100">
+                  <div className="space-y-1.5 pt-3 md:pt-3.5 border-t border-slate-100">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-brand-blue block">Цвет</span>
                     <div className="flex flex-wrap gap-2 md:gap-3">
                       {product.variants.map((v: any) => {
@@ -265,7 +265,7 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
 
                 {/* Size Selector */}
                 {sizes.length > 0 && (
-                  <div className="space-y-2 pt-4 md:pt-5 border-t border-slate-100">
+                  <div className="space-y-1.5 pt-3 md:pt-3.5 border-t border-slate-100">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-brand-blue">Размер</span>
                       <button className="text-[8px] md:text-[9px] uppercase tracking-widest text-slate-400 underline underline-offset-4">Таблица</button>
@@ -329,7 +329,7 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
                   </Button>
                 </div>
 
-                <div className="pt-4 md:pt-5 border-t border-slate-100 flex items-center gap-6 md:gap-8">
+                <div className="pt-3 md:pt-3.5 border-t border-slate-100 flex items-center gap-6 md:gap-8">
                    <button 
                     onClick={() => setIsShareModalOpen(true)}
                     className="flex items-center gap-1.5 text-[9px] md:text-[10px] uppercase tracking-widest text-slate-400 hover:text-brand-blue transition-colors"
@@ -346,8 +346,8 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
 
           {/* Recommended Section */}
           {recommended.length > 0 && (
-            <div className="mt-24 md:mt-48 pt-16 md:pt-24 border-t border-slate-100 relative">
-              <div className="flex justify-between items-end mb-8 md:mb-16 relative z-10">
+            <div className="mt-12 md:mt-16 pt-8 md:pt-10 border-t border-slate-100 relative">
+              <div className="flex justify-between items-end mb-6 md:mb-8 relative z-10">
                 <div className="w-full lg:w-auto text-left">
                   <h2 className="text-xl md:text-3xl font-bold tracking-tight text-brand-blue uppercase mb-2 md:mb-4">Вам может понравиться.</h2>
                   <p className="text-xs md:text-slate-500 max-w-lg">Дополните свой образ нашими кураторскими рекомендациями.</p>
@@ -382,7 +382,7 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
                       <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/5 transition-colors duration-500" />
                     </div>
                     <div>
-                      <h3 className="text-[10px] md:text-sm font-bold text-brand-blue uppercase tracking-tight group-hover:text-slate-500 transition-colors truncate">{item.name}</h3>
+                      <h3 className="text-[10px] md:text-sm font-bold text-brand-blue tracking-tight group-hover:text-slate-500 transition-colors truncate">{item.name}</h3>
                       <p className="mt-0.5 md:mt-1 text-xs text-slate-500">{item.price.toLocaleString('ru-RU')} сум</p>
                     </div>
                   </Link>
