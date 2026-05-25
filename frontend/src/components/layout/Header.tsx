@@ -64,6 +64,34 @@ export const Header = () => {
     }
   }, []);
 
+  // Sanitize duplicate cookies on mount/lang change to prevent mixed translation states
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") return;
+
+    const parts = host.split('.');
+    const mainDomain = parts.length > 2 ? parts.slice(-2).join('.') : host;
+
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const cookieParts = value.split(`; ${name}=`);
+      if (cookieParts.length === 2) return cookieParts.pop()?.split(';').shift();
+      return null;
+    };
+
+    const activeVal = getCookie("googtrans");
+    if (activeVal) {
+      // Clear exact host cookies (to avoid local duplicates)
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${host};`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${host};`;
+
+      // Rewrite strictly to the shared parent domain
+      document.cookie = `googtrans=${activeVal}; path=/; domain=.${mainDomain};`;
+    }
+  }, [currentLang]);
+
   const toggleLanguage = () => {
     const newLang = currentLang === "RU" ? "UZ" : "RU";
     
@@ -73,40 +101,31 @@ export const Header = () => {
       
       if (host !== "localhost" && host !== "127.0.0.1") {
         const parts = host.split('.');
-        if (parts.length > 2) {
-          const mainDomain = parts.slice(-2).join('.');
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${mainDomain};`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${mainDomain};`;
-        } else {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${host};`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${host};`;
-        }
+        const mainDomain = parts.length > 2 ? parts.slice(-2).join('.') : host;
+        
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${mainDomain};`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${mainDomain};`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${host};`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${host};`;
       }
     };
 
     const setCookie = (name: string, value: string) => {
       const host = window.location.hostname;
-      
-      // Delete any duplicates first to prevent mixed domains
       deleteCookie(name);
       
-      document.cookie = `${name}=${value}; path=/;`;
-      if (host !== "localhost" && host !== "127.0.0.1") {
+      if (host === "localhost" || host === "127.0.0.1") {
+        document.cookie = `${name}=${value}; path=/;`;
+      } else {
         const parts = host.split('.');
-        if (parts.length > 2) {
-          const mainDomain = parts.slice(-2).join('.');
-          document.cookie = `${name}=${value}; path=/; domain=.${mainDomain};`;
-          document.cookie = `${name}=${value}; path=/; domain=${mainDomain};`;
-        } else {
-          document.cookie = `${name}=${value}; path=/; domain=.${host};`;
-        }
+        const mainDomain = parts.length > 2 ? parts.slice(-2).join('.') : host;
+        document.cookie = `${name}=${value}; path=/; domain=.${mainDomain};`;
       }
     };
 
     if (newLang === "UZ") {
       setCookie("googtrans", "/ru/uz");
     } else {
-      // Force Russian explicitly to override
       setCookie("googtrans", "/ru/ru");
     }
 
