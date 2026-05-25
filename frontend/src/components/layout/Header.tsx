@@ -52,8 +52,13 @@ export const Header = () => {
     };
 
     const cookieVal = getCookie("googtrans");
-    if (cookieVal && cookieVal.includes("/uz")) {
-      setCurrentLang("UZ");
+    if (cookieVal) {
+      const decoded = decodeURIComponent(cookieVal);
+      if (decoded.includes("/uz")) {
+        setCurrentLang("UZ");
+      } else {
+        setCurrentLang("RU");
+      }
     } else {
       setCurrentLang("RU");
     }
@@ -64,16 +69,18 @@ export const Header = () => {
     
     const deleteCookie = (name: string) => {
       const host = window.location.hostname;
-      // Simple path deletion
       document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
       
-      // Traverse all possible subdomain levels to ensure total deletion
-      const parts = host.split('.');
-      while (parts.length > 0) {
-        const domainStr = parts.join('.');
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domainStr};`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domainStr};`;
-        parts.shift();
+      if (host !== "localhost" && host !== "127.0.0.1") {
+        const parts = host.split('.');
+        if (parts.length > 2) {
+          const mainDomain = parts.slice(-2).join('.');
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${mainDomain};`;
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${mainDomain};`;
+        } else {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${host};`;
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${host};`;
+        }
       }
     };
 
@@ -83,17 +90,15 @@ export const Header = () => {
       // Delete any duplicates first to prevent mixed domains
       deleteCookie(name);
       
-      if (host === "localhost" || host === "127.0.0.1") {
-        document.cookie = `${name}=${value}; path=/;`;
-      } else {
-        // Set cookie on all subdomain levels to ensure Google Translate reads it correctly
-        document.cookie = `${name}=${value}; path=/;`;
+      document.cookie = `${name}=${value}; path=/;`;
+      if (host !== "localhost" && host !== "127.0.0.1") {
         const parts = host.split('.');
-        while (parts.length > 0) {
-          const domainStr = parts.join('.');
-          document.cookie = `${name}=${value}; path=/; domain=.${domainStr};`;
-          document.cookie = `${name}=${value}; path=/; domain=${domainStr};`;
-          parts.shift();
+        if (parts.length > 2) {
+          const mainDomain = parts.slice(-2).join('.');
+          document.cookie = `${name}=${value}; path=/; domain=.${mainDomain};`;
+          document.cookie = `${name}=${value}; path=/; domain=${mainDomain};`;
+        } else {
+          document.cookie = `${name}=${value}; path=/; domain=.${host};`;
         }
       }
     };
@@ -206,7 +211,10 @@ export const Header = () => {
                 onMouseEnter={() => setIsLangDropdownOpen(true)}
                 onMouseLeave={() => setIsLangDropdownOpen(false)}
               >
-                <button className="hidden md:flex items-center gap-1.5 hover:text-brand-blue transition-colors text-[13px] font-bold mr-2 h-10 select-none">
+                <button 
+                  onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                  className="hidden md:flex items-center gap-1.5 hover:text-brand-blue transition-colors text-[13px] font-bold mr-2 h-10 select-none"
+                >
                   <Globe strokeWidth={1.25} className="w-5 h-5" />
                   <span>{currentLang}</span>
                 </button>

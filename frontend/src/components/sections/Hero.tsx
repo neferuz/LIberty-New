@@ -43,8 +43,11 @@ export const Hero = () => {
       return null;
     };
     const cookieVal = getCookie("googtrans");
-    if (cookieVal && cookieVal.includes("/uz")) {
-      setIsUz(true);
+    if (cookieVal) {
+      const decoded = decodeURIComponent(cookieVal);
+      if (decoded.includes("/uz")) {
+        setIsUz(true);
+      }
     }
   }, []);
 
