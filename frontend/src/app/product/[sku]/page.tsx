@@ -37,6 +37,30 @@ async function getRecommended(categoryId: number, currentId: number) {
   }
 }
 
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ sku: string }> }): Promise<Metadata> {
+  const { sku } = await params;
+  const product = await getProductBySku(sku);
+  if (!product) return { title: "Товар не найден | Liberty Wear" };
+  
+  const title = `${product.name} | Купить в Liberty Wear`;
+  const description = product.description 
+    ? (product.description.length > 160 ? product.description.slice(0, 157) + "..." : product.description)
+    : `Купить премиальный ${product.name.toLowerCase()} в интернет-магазине Liberty Wear. Премиальные материалы, идеальная посадка.`;
+    
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: product.image_url ? [product.image_url] : [],
+      type: "website",
+    }
+  };
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ sku: string }> }) {
   const { sku } = await params;
   const product = await getProductBySku(sku);
