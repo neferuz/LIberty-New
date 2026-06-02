@@ -121,7 +121,9 @@ async def sync_catalog():
                 "image_url": image_url,
                 "images": images_str,
                 "is_active": p.get('ACTIVE') == 'Y',
-                "bitrix_id": bitrix_id
+                "bitrix_id": bitrix_id,
+                "variants_json": None,
+                "characteristics_json": None
             }
 
             if product:

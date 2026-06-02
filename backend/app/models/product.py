@@ -19,6 +19,9 @@ class Product(Base):
     sizes = Column(String, nullable=True) # Comma separated
     composition = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_archived = Column(Boolean, default=False)
+    variants_json = Column(Text, nullable=True)
+    characteristics_json = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

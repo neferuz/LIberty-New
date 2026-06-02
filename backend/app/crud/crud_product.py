@@ -7,8 +7,21 @@ class CRUDProduct:
     def get(self, db: Session, id: int) -> Optional[Product]:
         return db.query(Product).filter(Product.id == id).first()
 
-    def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100, category_id: Optional[int] = None) -> List[Product]:
+    def get_multi(
+        self, 
+        db: Session, 
+        *, 
+        skip: int = 0, 
+        limit: int = 100, 
+        category_id: Optional[int] = None,
+        include_inactive: bool = False,
+        include_archived: bool = False
+    ) -> List[Product]:
         query = db.query(Product)
+        if not include_inactive:
+            query = query.filter(Product.is_active == True)
+        if not include_archived:
+            query = query.filter(Product.is_archived == False)
         if category_id:
             query = query.filter(Product.category_id == category_id)
         return query.order_by(Product.created_at.desc()).offset(skip).limit(limit).all()

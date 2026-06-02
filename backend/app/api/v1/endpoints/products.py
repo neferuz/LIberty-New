@@ -39,12 +39,12 @@ async def get_categories(db: Session = Depends(get_db)):
         Product.category_id,
         Product.image_url,
         func.row_number().over(partition_by=Product.category_id, order_by=Product.id).label("rn")
-    ).subquery()
+    ).filter(Product.is_active == True, Product.is_archived == False).subquery()
     
     first_images = db.query(subquery.c.category_id, subquery.c.image_url).filter(subquery.c.rn == 1).all()
     image_map = {int(img[0]): img[1] for img in first_images if img[0] is not None}
     
-    counts = db.query(Product.category_id, func.count(Product.id)).group_by(Product.category_id).all()
+    counts = db.query(Product.category_id, func.count(Product.id)).filter(Product.is_active == True, Product.is_archived == False).group_by(Product.category_id).all()
     count_map = {int(c[0]): c[1] for c in counts if c[0] is not None}
     
     # Populate initial states
@@ -124,11 +124,20 @@ def read_products(
     skip: int = 0,
     limit: int = 100,
     category_id: Optional[int] = None,
+    include_inactive: bool = False,
+    include_archived: bool = False,
 ) -> Any:
     """
     Retrieve products.
     """
-    products = crud.crud_product.get_multi(db, skip=skip, limit=limit, category_id=category_id)
+    products = crud.crud_product.get_multi(
+        db, 
+        skip=skip, 
+        limit=limit, 
+        category_id=category_id,
+        include_inactive=include_inactive,
+        include_archived=include_archived
+    )
     return products
 
 @router.post("", response_model=schemas.product.Product)
@@ -287,6 +296,8 @@ async def read_product(
     *,
     db: Session = Depends(get_db),
     id_or_sku: str,
+    include_inactive: bool = False,
+    include_archived: bool = False,
 ) -> Any:
     """
     Get product by ID or SKU, dynamically enriched with Bitrix24 variants and characteristics.
@@ -297,7 +308,8 @@ async def read_product(
     if cache_key in PRODUCT_CACHE:
         cached_time, cached_data = PRODUCT_CACHE[cache_key]
         if now - cached_time < CACHE_TTL:
-            return cached_data
+            if (include_inactive or cached_data.get("is_active")) and (include_archived or not cached_data.get("is_archived")):
+                return cached_data
 
     from app.models.product import Product
     
@@ -325,12 +337,30 @@ async def read_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    if not include_inactive and not product.is_active:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if not include_archived and product.is_archived:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    import json
     variants = []
     characteristics = {}
     composition = product.composition
     sizes = product.sizes
 
-    if product.bitrix_id:
+    # Check database cache first!
+    if product.variants_json:
+        try:
+            variants = json.loads(product.variants_json)
+            if product.characteristics_json:
+                characteristics = json.loads(product.characteristics_json)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to load cached variants from DB: {str(e)}")
+
+    # If not in cache, query Bitrix24 dynamically
+    if not variants and product.bitrix_id:
         try:
             # Fetch raw product details to get composition from PROPERTY_115
             p_data = await bitrix_service._call('crm.product.get', {'id': product.bitrix_id})
@@ -391,14 +421,14 @@ async def read_product(
                         "349c9dd2b535db23e6b556bb7981f885": "Хаки (Classic Khaki)",
                         "ebcd1eee9579b3a525b3a9d28f0688f2": "Розовый (Classic Pink)",
                         "a8c212a52ded4ba7964c86c662abe9cd": "Нежно-розовый (Soft Pink)",
-                        "fee7b4cb1b7706d20a0529fb8c6a879d": "Светло-розовый (Light Pink)",
+                        "fee7b4cb1b7706d20a0529fb8c6a879d": "Фиолетовый (Classic Violet)",
                         "c3ff02038016ea497ba6a118f5dde12e": "Голубой (Classic Blue)",
                         "0accc9c8a22d00d3edb669a842f67042": "Шалфей (Classic Sage)",
                         "0a230f56594f9b37a6cb2f8723a2a14f": "Мятный (Classic Mint)",
                         "64ee0dfed44e71da4a85c29d84b8f7ac": "Графит (Classic Graphite)",
                         "abe9b3925243cacb7bb84ad8fcabbf6b": "Персиковый (Classic Peach)",
                         "b80b0a6bc304d465bb2cfa57dae4dd8d": "Сиреневый (Classic Lilac)",
-                        "3685eaff1dad904ae1c1569cee0d77f3": "Бежевый (Classic Beige)",
+                        "3685eaff1dad904ae1c1569cee0d77f3": "Серый (Classic Grey)",
                         "0f8e36378678dd2bfab7cfebef630b9a": "Нежно-голубой (Soft Blue)",
                         "396d29ac2cb3bb0996a3dcc1442c1a03": "Мятный (Classic Mint)",
                         "4e97eddff01d55f61c2582eb64789b41": "Бордовый (Classic Bordeaux)",
@@ -422,13 +452,13 @@ async def read_product(
                         "bahtl20Z": "XL",
                         
                         # Highload Block b_hlbd_razmery size hashes
-                        # Adults & Teens
+                        # Kids / Teens
                         "0a9ba8f9c12f6df659dc009a22db8197": "XXS",
-                        "2bb51496fe8b72b6aa984b8975ab528c": "XS",
-                        "ac7c6f452cc57aeca3ed9c14e0aa4d06": "S",
-                        "c4150de8d2bab3737740665dac14885f": "M",
-                        "526ba9f8e4f82e3ffa85b69dd75ff8e7": "L",
-                        "7dda4dcd82e2423ec6866c4643cf5857": "XL",
+                        "2bb51496fe8b72b6aa984b8975ab528c": "140",
+                        "ac7c6f452cc57aeca3ed9c14e0aa4d06": "146",
+                        "c4150de8d2bab3737740665dac14885f": "152",
+                        "526ba9f8e4f82e3ffa85b69dd75ff8e7": "158",
+                        "7dda4dcd82e2423ec6866c4643cf5857": "164",
                         
                         # Kids
                         "994738ea6cfd61e697cc6ad5efd9886a": "92",
@@ -583,6 +613,22 @@ async def read_product(
             import logging
             logging.getLogger(__name__).error(f"Failed to fetch dynamic variants from Bitrix24: {str(e)}")
 
+    # Save fetched dynamic data back to database cache to speed up subsequent requests!
+    if variants and not product.variants_json:
+        try:
+            product.variants_json = json.dumps(variants, ensure_ascii=False)
+            product.characteristics_json = json.dumps(characteristics, ensure_ascii=False)
+            if sizes:
+                product.sizes = sizes
+            if composition:
+                product.composition = composition
+            db.add(product)
+            db.commit()
+        except Exception as save_err:
+            db.rollback()
+            import logging
+            logging.getLogger(__name__).error(f"Failed to save dynamic variants to DB cache: {str(save_err)}")
+
     # Attach dynamic attributes to returned product schema
     product_dict = {
         "id": product.id,
@@ -616,5 +662,31 @@ async def read_product(
     PRODUCT_CACHE[cache_key] = cache_entry
     
     return product_dict
+
+
+@router.post("/{id}/archive", response_model=schemas.product.Product)
+def archive_product(id: int, db: Session = Depends(get_db)) -> Any:
+    from app.models.product import Product
+    product = db.query(Product).filter(Product.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    product.is_archived = True
+    db.commit()
+    db.refresh(product)
+    PRODUCT_CACHE.clear()
+    return product
+
+
+@router.post("/{id}/unarchive", response_model=schemas.product.Product)
+def unarchive_product(id: int, db: Session = Depends(get_db)) -> Any:
+    from app.models.product import Product
+    product = db.query(Product).filter(Product.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    product.is_archived = False
+    db.commit()
+    db.refresh(product)
+    PRODUCT_CACHE.clear()
+    return product
 
 

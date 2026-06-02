@@ -66,13 +66,13 @@ async def sync_single_product(product_id: int, db: Session, category_map: dict =
             "bahtl20Z": "XL",
             
             # Highload Block b_hlbd_razmery size hashes
-            # Adults & Teens
+            # Kids / Teens
             "0a9ba8f9c12f6df659dc009a22db8197": "XXS",
-            "2bb51496fe8b72b6aa984b8975ab528c": "XS",
-            "ac7c6f452cc57aeca3ed9c14e0aa4d06": "S",
-            "c4150de8d2bab3737740665dac14885f": "M",
-            "526ba9f8e4f82e3ffa85b69dd75ff8e7": "L",
-            "7dda4dcd82e2423ec6866c4643cf5857": "XL",
+            "2bb51496fe8b72b6aa984b8975ab528c": "140",
+            "ac7c6f452cc57aeca3ed9c14e0aa4d06": "146",
+            "c4150de8d2bab3737740665dac14885f": "152",
+            "526ba9f8e4f82e3ffa85b69dd75ff8e7": "158",
+            "7dda4dcd82e2423ec6866c4643cf5857": "164",
             
             # Kids
             "994738ea6cfd61e697cc6ad5efd9886a": "92",
@@ -231,7 +231,9 @@ async def sync_single_product(product_id: int, db: Session, category_map: dict =
             "category_id": section_id,
             "bitrix_id": bitrix_id,
             "sizes": sizes_str,
-            "composition": composition
+            "composition": composition,
+            "variants_json": None,
+            "characteristics_json": None
         }
 
         if product:

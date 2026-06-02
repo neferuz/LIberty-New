@@ -36,6 +36,8 @@ interface Product {
   category_id: number | null;
   image_url: string | null;
   is_active: boolean;
+  is_archived: boolean;
+  bitrix_id?: number | null;
 }
 
 interface Category {
@@ -52,6 +54,7 @@ export default function ProductsPage() {
   const [activeSubId, setActiveSubId] = useState<string>("all");
   const [activeSubSubId, setActiveSubSubId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "archived">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -143,11 +146,50 @@ export default function ProductsPage() {
     }
   };
 
+  const handleArchiveToggle = async (product: Product) => {
+    try {
+      const action = product.is_archived ? "unarchive" : "archive";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/v1/products/${product.id}/${action}`, {
+        method: "POST",
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+
+      if (!res.ok) {
+        setToast({ 
+          message: `Не удалось ${product.is_archived ? "восстановить" : "архивировать"} товар`, 
+          type: "error" 
+        });
+        return;
+      }
+
+      const updatedProduct = await res.json();
+      
+      // Update local state
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_archived: updatedProduct.is_archived } : p));
+      
+      // Update selected product in drawer
+      setSelectedProduct(prev => prev && prev.id === product.id ? { ...prev, is_archived: updatedProduct.is_archived } : prev);
+      
+      setToast({ 
+        message: product.is_archived 
+          ? "Товар успешно восстановлен из архива" 
+          : "Товар успешно перенесен в архив", 
+        type: "success" 
+      });
+    } catch (err) {
+      console.error(err);
+      setToast({ message: "Ошибка при изменении статуса товара", type: "error" });
+    }
+  };
+
   const fetchData = async () => {
     try {
       const t = Date.now();
       const [prodRes, catRes] = await Promise.all([
-        fetch(`/api/v1/products/?limit=500&t=${t}`),
+        fetch(`/api/v1/products/?limit=500&include_inactive=true&include_archived=true&t=${t}`),
         fetch(`/api/v1/products/categories?t=${t}`)
       ]);
       
@@ -201,14 +243,25 @@ export default function ProductsPage() {
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    if (activeRootId === "all") return matchesSearch;
+    let matchesStatus = true;
+    if (statusFilter === "active") {
+      matchesStatus = product.is_active && !product.is_archived;
+    } else if (statusFilter === "inactive") {
+      matchesStatus = !product.is_active;
+    } else if (statusFilter === "archived") {
+      matchesStatus = product.is_archived;
+    }
+
+    if (!matchesSearch || !matchesStatus) return false;
+    
+    if (activeRootId === "all") return true;
     
     const targetIds = getTargetCategoryIds();
     if (targetIds.length > 0) {
-      return matchesSearch && product.category_id !== null && targetIds.includes(product.category_id);
+      return product.category_id !== null && targetIds.includes(product.category_id);
     }
     
-    return matchesSearch;
+    return true;
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -356,6 +409,19 @@ export default function ProductsPage() {
           ))}
         </div>
         <div className="flex items-center gap-2 mb-2">
+           <select 
+             value={statusFilter}
+             onChange={(e) => {
+               setStatusFilter(e.target.value as any);
+               setCurrentPage(1);
+             }}
+             className="px-3 py-1.5 bg-white border border-[#e3e8ee] hover:border-[#2c3b6e]/30 rounded-lg text-[13px] text-[#4f566b] outline-none transition-all cursor-pointer font-semibold shadow-sm"
+           >
+             <option value="all">Все статусы</option>
+             <option value="active">Активные</option>
+             <option value="inactive">Неактивные в Bitrix</option>
+             <option value="archived">В архиве</option>
+           </select>
            <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#4f566b] group-focus-within:text-[#2c3b6e] transition-colors" />
               <input 
@@ -366,7 +432,7 @@ export default function ProductsPage() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-9 pr-4 py-1.5 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white rounded-lg text-[13px] outline-none transition-all w-64"
+                className="pl-9 pr-4 py-1.5 bg-[#f7f8f9] border border-transparent focus:border-[#2c3b6e]/30 focus:bg-white rounded-lg text-[13px] outline-none transition-all w-64 shadow-inner"
               />
            </div>
         </div>
@@ -512,7 +578,17 @@ export default function ProductsPage() {
                               </div>
                             )}
                          </div>
-                         <span className="text-[13px] font-bold text-[#1a1f36] group-hover:text-[#2c3b6e] transition-colors">{product.name}</span>
+                         <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                               <span className="text-[13px] font-bold text-[#1a1f36] group-hover:text-[#2c3b6e] transition-colors">{product.name}</span>
+                               {!product.is_active && (
+                                 <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 rounded-md">Скрыт в Bitrix</span>
+                               )}
+                               {product.is_archived && (
+                                 <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-200 rounded-md">В архиве</span>
+                               )}
+                            </div>
+                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -585,10 +661,52 @@ export default function ProductsPage() {
                           <p className="text-[13px] font-black text-[#2c3b6e]">{selectedProduct.price.toLocaleString('ru-RU')} сум</p>
                        </div>
                     </div>
+                    
+                    {/* Product Status Box */}
+                    <div className="p-4 bg-[#f7f8f9] rounded-xl border border-[#e3e8ee] space-y-3">
+                       <p className="text-[10px] font-bold text-[#4f566b] uppercase tracking-widest">Статус на сайте</p>
+                       <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                             <span className="text-[12px] text-[#4f566b]">Активность (Bitrix24):</span>
+                             {selectedProduct.is_active ? (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md">Активен</span>
+                             ) : (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 rounded-md">Скрыт</span>
+                             )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                             <span className="text-[12px] text-[#4f566b]">Архив сайта:</span>
+                             {selectedProduct.is_archived ? (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-md">В архиве</span>
+                             ) : (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 rounded-md">Нет</span>
+                             )}
+                          </div>
+                       </div>
+                    </div>
                  </div>
               </div>
-              <div className="px-6 py-5 border-t border-[#e3e8ee] bg-[#f7f8f9]/50 sticky bottom-0">
-                 <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#2c3b6e] rounded-xl text-[13px] font-bold text-white hover:bg-[#232f58] transition-all">Смотреть в Bitrix24</button>
+              <div className="px-6 py-5 border-t border-[#e3e8ee] bg-[#f7f8f9]/50 sticky bottom-0 flex flex-col gap-2">
+                 {selectedProduct.bitrix_id && (
+                    <button 
+                       onClick={() => window.open(`https://yustex.bitrix24.uz/crm/product/show/${selectedProduct.bitrix_id}/`, '_blank')}
+                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f7f8f9] rounded-xl text-[13px] font-semibold transition-all shadow-sm cursor-pointer"
+                    >
+                       <ExternalLink className="w-3.5 h-3.5" />
+                       Смотреть в Bitrix24
+                    </button>
+                 )}
+                 <button 
+                    onClick={() => handleArchiveToggle(selectedProduct)}
+                    className={cn(
+                       "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer",
+                       selectedProduct.is_archived 
+                          ? "bg-emerald-600 hover:bg-emerald-700" 
+                          : "bg-amber-600 hover:bg-amber-700"
+                    )}
+                 >
+                    {selectedProduct.is_archived ? "Восстановить из архива" : "Убрать в архив"}
+                 </button>
               </div>
             </motion.div>
           </>

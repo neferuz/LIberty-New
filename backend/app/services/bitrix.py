@@ -34,7 +34,7 @@ class BitrixService:
         while True:
             result = await self._call("crm.product.list", {
                 "order": {"ID": "ASC"},
-                "select": ["ID", "NAME", "DESCRIPTION", "PRICE", "CURRENCY_ID", "XML_ID", "PREVIEW_PICTURE", "DETAIL_PICTURE", "PROPERTY_45", "PROPERTY_113", "SECTION_ID"],
+                "select": ["ID", "NAME", "DESCRIPTION", "PRICE", "CURRENCY_ID", "XML_ID", "PREVIEW_PICTURE", "DETAIL_PICTURE", "PROPERTY_45", "PROPERTY_113", "SECTION_ID", "ACTIVE"],
                 "start": start
             })
             

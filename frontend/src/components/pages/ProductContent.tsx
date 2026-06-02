@@ -26,6 +26,8 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
   const [currentUrl, setCurrentUrl] = useState<string>("");
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showSizeError, setShowSizeError] = useState(false);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [activeGuideTab, setActiveGuideTab] = useState<"women" | "men" | "kids" | "infants">("women");
   
   // Set initial image and URL based on variants
   useEffect(() => {
@@ -45,6 +47,24 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
       }
     }
     if (typeof window !== 'undefined') setCurrentUrl(window.location.href);
+  }, [product]);
+
+  // Auto-detect correct size guide tab based on product category
+  useEffect(() => {
+    if (product) {
+      const catName = (product.category || "").toLowerCase();
+      const catId = product.category_id;
+      
+      if (catId === 31 || catName.includes("ясель") || catName.includes("малыш") || catName.includes("новорожден") || catName.includes("baby") || catName.includes("infant")) {
+        setActiveGuideTab("infants");
+      } else if (catName.includes("детск") || catName.includes("ребен") || catName.includes("мальчик") || catName.includes("девоч") || catName.includes("kid") || catName.includes("child")) {
+        setActiveGuideTab("kids");
+      } else if (catName.includes("мужск") || catName.includes("парен") || catName.includes("men")) {
+        setActiveGuideTab("men");
+      } else {
+        setActiveGuideTab("women");
+      }
+    }
   }, [product]);
 
   const handleColorChange = (color: string) => {
@@ -268,7 +288,12 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
                   <div className="space-y-1.5 pt-3 md:pt-3.5 border-t border-slate-100">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-brand-blue">Размер</span>
-                      <button className="text-[8px] md:text-[9px] uppercase tracking-widest text-slate-400 underline underline-offset-4">Таблица</button>
+                      <button 
+                        onClick={() => setIsSizeGuideOpen(true)}
+                        className="text-[8px] md:text-[9px] uppercase tracking-widest text-slate-400 hover:text-brand-blue underline underline-offset-4 transition-colors font-bold cursor-pointer"
+                      >
+                        Таблица размеров
+                      </button>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-3">
                       {sizes.map((size: string) => (
@@ -437,6 +462,170 @@ export function ProductContent({ product, recommended }: ProductContentProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Size Guide Modal */}
+      <AnimatePresence>
+        {isSizeGuideOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSizeGuideOpen(false)}
+              className="fixed inset-0 bg-brand-blue/60 backdrop-blur-md z-[200] cursor-pointer"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-4xl bg-white p-5 md:p-8 z-[210] shadow-2xl border border-slate-100 flex flex-col max-h-[85vh] md:max-h-[90vh]"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                   <h3 className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-brand-blue">Таблица размеров</h3>
+                   <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Определите свой идеальный размер</p>
+                </div>
+                <button 
+                  onClick={() => setIsSizeGuideOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center border border-slate-100 hover:border-brand-blue rounded-full transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4 text-slate-400 hover:text-brand-blue" />
+                </button>
+              </div>
+
+              {/* Tabs Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-slate-100 pb-4 mb-6">
+                {[
+                  { id: "women", label: "Женская" },
+                  { id: "men", label: "Мужская" },
+                  { id: "kids", label: "Детская (1.5-14 лет)" },
+                  { id: "infants", label: "Ясельная (0-3 года)" }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveGuideTab(tab.id as any)}
+                    className={cn(
+                      "py-2 px-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all text-center border cursor-pointer rounded-none",
+                      activeGuideTab === tab.id
+                        ? "border-brand-blue bg-brand-blue text-white shadow-sm"
+                        : "border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:text-slate-700"
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Size Table Content */}
+              <div className="flex-1 overflow-auto scrollbar-thin">
+                <div className="min-w-[600px] border border-slate-100">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="bg-slate-50/60 border-b border-slate-100">
+                        {SIZE_GUIDES[activeGuideTab].headers.map((header, i) => (
+                          <th 
+                            key={i} 
+                            className="px-4 py-3 text-[9px] md:text-[10px] font-bold text-brand-blue uppercase tracking-widest"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {SIZE_GUIDES[activeGuideTab].rows.map((row, i) => (
+                        <tr 
+                          key={i} 
+                          className="hover:bg-slate-50/40 transition-colors group"
+                        >
+                          {row.map((cell, j) => (
+                            <td 
+                              key={j} 
+                              className={cn(
+                                "px-4 py-3.5 text-xs text-slate-500 tracking-wide font-medium group-hover:text-slate-900 transition-colors",
+                                j === 0 && "font-bold text-brand-blue"
+                              )}
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[9px] md:text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
+                <span>* Все замеры указаны в сантиметрах (см)</span>
+                <span>Liberty Wear Premium Quality</span>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+const SIZE_GUIDES = {
+  women: {
+    title: "Женская размерная сетка",
+    headers: ["Международный", "Циферный", "Обхват груди", "Обхват талии", "Обхват бёдер"],
+    rows: [
+      ["S", "42", "82-85", "66-69", "92-95"],
+      ["M", "44", "86-89", "70-73", "96-98"],
+      ["L", "46", "90-93", "74-77", "99-101"],
+      ["XL", "48", "94-97", "78-81", "102-104"],
+      ["2XL", "50", "98-102", "82-85", "105-108"],
+      ["3XL", "52", "103-107", "86-90", "109-112"],
+      ["4XL", "54", "108-113", "91-95", "113-116"]
+    ]
+  },
+  men: {
+    title: "Мужская размерная сетка",
+    headers: ["Международный", "Циферный", "Обхват груди", "Обхват талии", "Обхват бёдер"],
+    rows: [
+      ["XS", "44", "88-91", "76-78", "92-95"],
+      ["S", "46", "92-95", "78-81", "96-99"],
+      ["M", "48", "96-99", "82-85", "100-103"],
+      ["L", "50", "100-103", "86-89", "104-107"],
+      ["XL", "52", "104-107", "90-94", "108-111"],
+      ["2XL", "54", "108-112", "95-99", "112-115"]
+    ]
+  },
+  kids: {
+    title: "Детская размерная сетка",
+    headers: ["Размер", "Возраст", "Рост (см)", "Обхват груди (см)", "Обхват талии (см)", "Обхват бёдер (см)"],
+    rows: [
+      ["92", "1.5-2 года", "86-92", "52-54", "50-52", "54-56"],
+      ["98", "2-3 года", "92-98", "54-56", "51-53", "56-58"],
+      ["104", "3-4 года", "98-104", "56-58", "52-54", "58-60"],
+      ["110", "4-5 лет", "104-110", "58-60", "53-55", "60-62"],
+      ["116", "5-6 лет", "110-116", "60-62", "54-56", "62-64"],
+      ["122", "6-7 лет", "116-122", "62-64", "55-57", "64-67"],
+      ["128", "7-8 лет", "122-128", "64-66", "57-59", "67-70"],
+      ["134", "8-9 лет", "128-134", "66-69", "58-61", "70-73"],
+      ["140", "9-10 лет", "134-140", "69-72", "60-62", "73-76"],
+      ["146", "10-11 лет", "140-146", "72-75", "61-64", "76-80"],
+      ["152", "11-12 лет", "146-152", "75-78", "63-66", "80-84"],
+      ["158", "12-13 лет", "152-158", "78-82", "65-68", "84-88"],
+      ["164", "13-14 лет", "158-164", "82-86", "67-70", "88-92"]
+    ]
+  },
+  infants: {
+    title: "Ясельная размерная сетка",
+    headers: ["Размер", "Возраст", "Рост (см)", "Обхват груди (см)", "Обхват талии (см)", "Обхват бёдер (см)"],
+    rows: [
+      ["56", "0-1 месяц", "50-56", "40-42", "40-41", "42-44"],
+      ["62", "1-3 месяца", "56-62", "42-44", "41-42", "44-46"],
+      ["68", "3-6 месяцев", "62-68", "44-46", "42-44", "46-48"],
+      ["74", "6-9 месяцев", "68-74", "46-48", "44-46", "48-50"],
+      ["80", "9-12 месяцев", "74-80", "48-50", "46-48", "50-52"],
+      ["86", "12-18 месяцев", "80-86", "50-52", "48-50", "52-54"],
+      ["92", "18-24 месяца", "86-92", "52-54", "50-52", "54-56"],
+      ["98", "2-3 года", "92-98", "54-56", "51-53", "56-58"]
+    ]
+  }
+};

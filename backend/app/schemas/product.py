@@ -14,6 +14,7 @@ class ProductBase(BaseModel):
     image_url: Optional[str] = None
     images: Optional[str] = None
     is_active: Optional[bool] = True
+    is_archived: Optional[bool] = False
 
 class ProductCreate(ProductBase):
     name: str

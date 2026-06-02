@@ -19,6 +19,27 @@ except Exception as e:
     # Column already exists, fail silently is normal
     pass
 
+# Inline database migration for is_archived column
+try:
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE products ADD COLUMN is_archived BOOLEAN DEFAULT FALSE"))
+        print("Successfully migrated: Added is_archived column to products table.")
+except Exception as e:
+    # Column already exists, fail silently is normal
+    pass
+
+# Inline database migration for caching columns in products table
+try:
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE products ADD COLUMN variants_json TEXT"))
+        conn.execute(text("ALTER TABLE products ADD COLUMN characteristics_json TEXT"))
+        print("Successfully migrated: Added caching columns (variants_json, characteristics_json) to products table.")
+except Exception as e:
+    # Columns already exist, fail silently is normal
+    pass
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
